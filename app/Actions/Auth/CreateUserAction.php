@@ -19,6 +19,7 @@ final readonly class CreateUserAction
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make((string) $data['password']),
+            'is_admin' => false,
             'email_verified_at' => now(),
         ]);
 

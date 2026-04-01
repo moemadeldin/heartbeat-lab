@@ -3,15 +3,14 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": [
-        "laravel",
-        "framework"
-    ],
+    "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "filament/filament": "^5.1",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
+        "laravel/telescope": "^5.17",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^4.0",
         "predis/predis": "^3.3"
@@ -20,6 +19,7 @@
         "barryvdh/laravel-ide-helper": "^3.6",
         "driftingly/rector-laravel": "^2.1",
         "fakerphp/faker": "^1.23",
+        "fruitcake/laravel-debugbar": "^4.0",
         "larastan/larastan": "^3.0",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.27",
@@ -57,7 +57,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
@@ -81,11 +82,12 @@
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse",
         "test:type-coverage": "pest --type-coverage --min=100",
-        "test:unit": "pest --parallel --coverage --exactly=99.5",
+        "test:compact": "pest --compact --coverage",
+        "test:unit": "pest --parallel --coverage --exactly=100",
         "pest": [
             "@test:type-coverage",
             "@test:unit",
-            "test:types"
+            "@test:types"
         ],
         "test": [
             "@test:lint",

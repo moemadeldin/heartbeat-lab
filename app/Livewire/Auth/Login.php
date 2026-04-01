@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Auth;
 
 use App\Actions\Auth\CreateSessionAction;
+use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -28,8 +30,8 @@ final class Login extends Component
 
         try {
             $action->execute($validated);
-
-            $this->redirect(route('dashboard'));
+            $this->redirectRoute('dashboard');
+            
         } catch (AuthenticationException $authenticationException) {
             $this->addError('email', $authenticationException->getMessage());
             $this->addError('password', $authenticationException->getMessage());

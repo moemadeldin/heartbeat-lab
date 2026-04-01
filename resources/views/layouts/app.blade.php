@@ -10,7 +10,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-gray-50 text-gray-900 antialiased font-sans">
+<body class="bg-gray-950 text-gray-100 antialiased font-sans">
     <div x-data="{ 
         show: false, 
         name: '',
