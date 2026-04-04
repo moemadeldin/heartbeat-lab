@@ -15,6 +15,9 @@
     <source>
         <include>
             <directory>app</directory>
+            <!-- <exclude>
+                <directory>app/Providers</directory>
+            </exclude> -->
         </include>
     </source>
     <php>

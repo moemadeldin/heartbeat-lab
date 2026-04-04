@@ -37,3 +37,13 @@ it('validates name is required', function (): void {
         ->call('update')
         ->assertHasErrors(['name' => 'required']);
 });
+
+it('fails to update site if name already exists', function (): void {
+    Site::factory()->create(['user_id' => $this->user->id, 'name' => 'Existing Site']);
+
+    Livewire::actingAs($this->user)
+        ->test(UpdateSite::class, ['siteId' => $this->site->id])
+        ->set('name', 'Existing Site')
+        ->call('update')
+        ->assertHasErrors(['name' => 'You are already monitoring a site with this name.']);
+});

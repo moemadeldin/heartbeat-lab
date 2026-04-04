@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Livewire\Sites\CreateSite;
 use App\Models\User;
+use Illuminate\Http\Response;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -13,7 +14,7 @@ beforeEach(function (): void {
 it('renders the create site form', function (): void {
     Livewire::actingAs($this->user)
         ->test(CreateSite::class)
-        ->assertStatus(200);
+        ->assertStatus(Response::HTTP_OK);
 });
 
 it('validates name is required', function (): void {
