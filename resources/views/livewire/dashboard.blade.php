@@ -24,14 +24,16 @@
     </nav>
 
     <main class="max-w-7xl mx-auto py-12 px-8" x-data="{ showCreateModal: false }"
-        @site-created.window="showCreateModal = false">
+        @site-created.window="showCreateModal = false"
+        @close-create-modal.window="showCreateModal = false"
+        @site-status-changed.window="$dispatch('site-status-updated')">
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-700">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-400 text-sm font-medium">Total Sites</p>
-                        <p class="text-3xl font-bold text-white mt-1">{{ $this->stats()['total'] }}</p>
+                        <p class="text-3xl font-bold text-white mt-1">{{ $this->stats['total'] }}</p>
                     </div>
                     <div
                         class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
@@ -44,7 +46,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-400 text-sm font-medium">Online</p>
-                        <p class="text-3xl font-bold text-green-400 mt-1">{{ $this->stats()['online'] }}</p>
+                        <p class="text-3xl font-bold text-green-400 mt-1">{{ $this->stats['online'] }}</p>
                     </div>
                     <div
                         class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center border border-green-500/30">
@@ -57,7 +59,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-400 text-sm font-medium">Offline</p>
-                        <p class="text-3xl font-bold text-red-400 mt-1">{{ $this->stats()['offline'] }}</p>
+                        <p class="text-3xl font-bold text-red-400 mt-1">{{ $this->stats['offline'] }}</p>
                     </div>
                     <div
                         class="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center border border-red-500/30">
@@ -97,7 +99,7 @@
             </div>
 
             <div class="min-h-100">
-                @if ($this->sites()->isEmpty())
+                @if ($this->sites->isEmpty())
                     <div class="py-20 text-center">
                         <div
                             class="w-20 h-20 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-600">
@@ -121,7 +123,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-700/30">
-                                @foreach ($this->sites() as $site)
+                                @foreach ($this->sites as $site)
                                     <tr class="hover:bg-white/5 transition-colors group" wire:key="row-{{ $site->id }}">
                                         <td class="px-8 py-5">
                                             <div class="flex items-center gap-4">

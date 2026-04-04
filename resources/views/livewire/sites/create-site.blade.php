@@ -3,7 +3,7 @@
     <div class="mb-6">
         <div class="flex items-center justify-between mb-2">
             <h3 class="text-2xl font-bold text-white">Add New Site</h3>
-            <button type="button" @click="$dispatch('close-modal')"
+            <button type="button" @click="$dispatch('close-create-modal')"
                 class="cursor-pointer text-gray-400 hover:text-white transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -37,7 +37,7 @@
 
         <!-- Buttons -->
         <div class="flex gap-3 pt-4">
-            <button type="button" @click="$dispatch('close-modal')"
+            <button type="button" @click="$dispatch('close-create-modal')"
                 class="cursor-pointer flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors">
                 Cancel
             </button>

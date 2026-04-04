@@ -38,3 +38,18 @@ channel.listen('.UserRegistered', (event) => {
         detail: event
     }));
 });
+
+const userId = window.Laravel?.userId;
+if (userId) {
+    const privateChannel = window.Echo.private(`user.${userId}`);
+
+    privateChannel.error((error) => {
+        console.error('Private channel subscription error:', error);
+    });
+
+    privateChannel.listen('.SiteStatusChanged', (event) => {
+        window.dispatchEvent(new CustomEvent('site-status-changed', {
+            detail: event
+        }));
+    });
+}

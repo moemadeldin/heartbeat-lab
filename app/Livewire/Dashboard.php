@@ -15,6 +15,9 @@ use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
+/**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Site> $sites
+ */
 final class Dashboard extends Component
 {
     #[Locked]
@@ -26,10 +29,10 @@ final class Dashboard extends Component
     #[On('site-created')]
     #[On('site-updated')]
     #[On('site-deleted')]
+    #[On('site-status-updated')]
     public function refreshSites(): void
     {
-        unset($this->sites);
-        unset($this->stats);
+        unset($this->sites, $this->stats);
         $this->selectedSiteId = null;
         $this->deleteId = null;
     }
@@ -63,6 +66,7 @@ final class Dashboard extends Component
         return Site::query()
             ->userSites($user)
             ->orderBy('created_at')
+            ->distinct()
             ->get();
     }
 
@@ -77,8 +81,8 @@ final class Dashboard extends Component
     #[Computed]
     public function stats(): array
     {
-
-        $sites = $this->sites();
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $sites */
+        $sites = $this->sites;
 
         return [
             'total' => $sites->count(),

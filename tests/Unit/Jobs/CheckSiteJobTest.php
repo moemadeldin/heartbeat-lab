@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Illuminate\Http\Client\Factory;
-use Illuminate\Http\Client\ConnectionException;
 use App\Jobs\CheckSiteJob;
 use App\Models\Site;
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
-
 beforeEach(function (): void {
     $this->user = User::factory()->create();
     $this->site = Site::factory()->for($this->user)->create([
@@ -46,11 +46,11 @@ it('updates site status when offline', function (): void {
 });
 
 it('handles connection error', function (): void {
+    Log::spy();
+
     Http::fake(function ($request): void {
         throw new ConnectionException('Connection failed');
     });
-
-    Log::shouldReceive('error')->once();
 
     $job = new CheckSiteJob($this->site);
     $job->handle(new Factory);
@@ -58,15 +58,39 @@ it('handles connection error', function (): void {
     $this->site->refresh();
 
     $this->assertFalse($this->site->is_online);
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with('Site check failed', Mockery::subset(['site_id' => $this->site->id]));
 });
 
 it('logs successful check', function (): void {
+    Log::spy();
+
     Http::fake([
         '*' => Http::response('', 200),
     ]);
 
-    Log::shouldReceive('info')->once();
+    $job = new CheckSiteJob($this->site);
+    $job->handle(new Factory);
+
+    Log::shouldHaveReceived('info')->with('Site checked', Mockery::any());
+    Log::shouldHaveReceived('info')->with('Uptime calculated', Mockery::any());
+});
+it('updates site status and calculates uptime', function (): void {
+    // 1. Mock Redis
+    Redis::shouldReceive('rpush')->once();
+    Redis::shouldReceive('ltrim')->once();
+    Redis::shouldReceive('lrange')->once()->andReturn([1, 1, 0]); // Simulate 2 up, 1 down
+
+    Http::fake(['*' => Http::response('', 200)]);
+    Log::spy();
 
     $job = new CheckSiteJob($this->site);
     $job->handle(new Factory);
+
+    $this->site->refresh();
+    
+    // 2/3 = 66.67%
+    $this->assertEquals(66.67, $this->site->uptime);
 });

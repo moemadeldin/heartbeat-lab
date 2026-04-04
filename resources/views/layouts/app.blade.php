@@ -11,6 +11,11 @@
 </head>
 
 <body class="bg-gray-950 text-gray-100 antialiased font-sans">
+    <script>
+        window.Laravel = {
+            userId: {{ Auth::check() ? Auth::id() : 'null' }}
+        };
+    </script>
     <div x-data="{ 
         show: false, 
         name: '',

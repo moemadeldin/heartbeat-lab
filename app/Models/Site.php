@@ -50,40 +50,40 @@ final class Site extends Model
         $query->where('user_id', $user->id);
     }
 
-    // /**
-    //  * @param  Builder<Site>  $query
-    //  * @return Builder<Site>
-    //  */
-    // #[Scope()]
-    // protected function whereURLDuplicate(Builder $query, User $user, string $url): Builder
-    // {
-    //     return $query->where('user_id', $user->id)
-    //         ->where('url', $url);
-    // }
+    /**
+     * @param  Builder<Site>  $query
+     * @return Builder<Site>
+     */
+    #[Scope()]
+    protected function whereURLDuplicate(Builder $query, User $user, string $url): Builder
+    {
+        return $query->where('user_id', $user->id)
+            ->where('url', $url);
+    }
 
-    // /**
-    //  * @param  Builder<Site>  $query
-    //  * @return Builder<Site>
-    //  */
-    // #[Scope()]
-    // protected function whereNameDuplicate(Builder $query, User $user, string $name): Builder
-    // {
-    //     return $query->where('user_id', $user->id)
-    //         ->where('name', $name);
-    // }
+    /**
+     * @param  Builder<Site>  $query
+     * @return Builder<Site>
+     */
+    #[Scope()]
+    protected function whereNameDuplicate(Builder $query, User $user, string $name): Builder
+    {
+        return $query->where('user_id', $user->id)
+            ->where('name', $name);
+    }
 
-    // /**
-    //  * @param  Builder<Site>  $query
-    //  * @return Builder<Site>
-    //  */
-    // #[Scope()]
-    // protected function sitesWithNoDuplicates(Builder $query): Builder
-    // {
-    //     return $query->select(['user_id', 'id', 'name', 'url', 'is_online', 'uptime', 'created_at'])
-    //         ->distinct()
-    //         ->with('user')
-    //         ->orderBy('created_at');
-    // }
+    /**
+     * @param  Builder<Site>  $query
+     * @return Builder<Site>
+     */
+    #[Scope()]
+    protected function sitesWithNoDuplicates(Builder $query): Builder
+    {
+        return $query->select(['user_id', 'id', 'name', 'url', 'is_online', 'uptime', 'created_at'])
+            ->distinct()
+            ->with('user')
+            ->orderBy('created_at');
+    }
 
     /**
      * Get the attributes that should be cast.

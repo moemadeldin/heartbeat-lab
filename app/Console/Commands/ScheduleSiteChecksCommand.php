@@ -32,7 +32,7 @@ final class ScheduleSiteChecksCommand extends Command
     {
         $this->info('Scheduling periodic site checks...');
 
-        Site::with('user')->chunk(100, function (Collection $sites): void {
+        Site::query()->with('user')->chunk(100, function (Collection $sites): void {
             foreach ($sites as $site) {
                 dispatch(new CheckSiteJob($site));
                 $this->line('Scheduled check for: '.$site->name);

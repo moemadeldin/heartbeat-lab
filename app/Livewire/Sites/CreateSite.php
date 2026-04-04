@@ -43,6 +43,7 @@ final class CreateSite extends Component
         $this->reset(['name', 'url']);
         $this->dispatch('site-created');
         $this->dispatch('close-modal');
+        $this->dispatch('close-create-modal');
     }
 
     public function render(): View
