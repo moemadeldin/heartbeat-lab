@@ -95,7 +95,7 @@ final class CheckSiteJob implements ShouldQueue
             return;
         }
 
-        $onlineCount = array_sum(array_map(fn ($value): int => (int) $value, $checks));
+        $onlineCount = array_sum(array_map(fn (string $value): int => (int) $value, $checks));
 
         $uptime = round(($onlineCount / $total) * 100, 2);
 
