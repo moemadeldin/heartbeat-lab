@@ -45,7 +45,19 @@ final class CheckSiteJob implements ShouldQueue
                 'last_checked_at' => now(),
             ]);
 
-            $this->calculateAndUpdateUptime($isOnline);
+            $uptime = $this->calculateAndUpdateUptime($isOnline);
+
+            Redis::setex(
+                sprintf('site:%s:status', $this->site->id),
+                120,
+                json_encode([
+                    'is_online' => $isOnline,
+                    'uptime' => $uptime,
+                    'status_code' => $response->status(),
+                    'response_time' => $responseTime,
+                    'last_checked_at' => now()->toIso8601String(),
+                ])
+            );
 
             Log::info('Site checked', [
                 'site_id' => $this->site->id,
@@ -66,7 +78,19 @@ final class CheckSiteJob implements ShouldQueue
                 'last_checked_at' => now(),
             ]);
 
-            $this->calculateAndUpdateUptime(false);
+            $uptime = $this->calculateAndUpdateUptime(false);
+
+            Redis::setex(
+                sprintf('site:%s:status', $this->site->id),
+                120,
+                json_encode([
+                    'is_online' => false,
+                    'uptime' => $uptime,
+                    'status_code' => null,
+                    'response_time' => null,
+                    'last_checked_at' => now()->toIso8601String(),
+                ])
+            );
 
             Log::error('Site check failed', [
                 'site_id' => $this->site->id,
@@ -83,7 +107,7 @@ final class CheckSiteJob implements ShouldQueue
         event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime, $previousOnline));
     }
 
-    private function calculateAndUpdateUptime(bool $isOnline): void
+    private function calculateAndUpdateUptime(bool $isOnline): float
     {
         $key = sprintf('site:%s:checks', $this->site->id);
 
@@ -94,21 +118,23 @@ final class CheckSiteJob implements ShouldQueue
         $checks = Redis::lrange($key, 0, -1);
         $total = count($checks);
 
-        if ($total === 0) {
-            return;
+        $uptime = 0.00;
+
+        if ($total > 0) {
+            $onlineCount = array_sum(array_map(fn (string $value): int => (int) $value, $checks));
+
+            $uptime = round(($onlineCount / $total) * 100, 2);
+
+            $this->site->update(['uptime' => $uptime]);
+
+            Log::info('Uptime calculated', [
+                'site_id' => $this->site->id,
+                'uptime' => $uptime,
+                'total_checks' => $total,
+                'online_checks' => $onlineCount,
+            ]);
         }
 
-        $onlineCount = array_sum(array_map(fn (string $value): int => (int) $value, $checks));
-
-        $uptime = round(($onlineCount / $total) * 100, 2);
-
-        $this->site->update(['uptime' => $uptime]);
-
-        Log::info('Uptime calculated', [
-            'site_id' => $this->site->id,
-            'uptime' => $uptime,
-            'total_checks' => $total,
-            'online_checks' => $onlineCount,
-        ]);
+        return $uptime;
     }
 }

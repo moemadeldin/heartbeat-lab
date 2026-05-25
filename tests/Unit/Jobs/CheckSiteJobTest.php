@@ -111,6 +111,7 @@ it('updates site status and calculates uptime', function (): void {
     Redis::shouldReceive('rpush')->once();
     Redis::shouldReceive('ltrim')->once();
     Redis::shouldReceive('lrange')->once()->andReturn([1, 1, 0]); // Simulate 2 up, 1 down
+    Redis::shouldReceive('setex')->once();
 
     Http::fake(['*' => Http::response('', 200)]);
     Log::spy();

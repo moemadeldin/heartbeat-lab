@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -35,6 +36,8 @@ final class Dashboard extends Component
         unset($this->sites, $this->stats);
         $this->selectedSiteId = null;
         $this->deleteId = null;
+
+        Cache::store('redis')->forget(sprintf('user:%s:dashboard:stats', Auth::id()));
     }
 
     public function editSite(string $siteId): void
@@ -81,15 +84,31 @@ final class Dashboard extends Component
     #[Computed]
     public function stats(): array
     {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $cacheKey = sprintf('user:%s:dashboard:stats', $user->id);
+
+        $cached = Cache::store('redis')->get($cacheKey);
+
+        if ($cached !== null) {
+            /** @var array{total: int, online: int, offline: int, uptime: float} $cached */
+            return $cached;
+        }
+
         /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $sites */
         $sites = $this->sites;
 
-        return [
+        $stats = [
             'total' => $sites->count(),
             'online' => $sites->where('is_online', true)->count(),
             'offline' => $sites->where('is_online', false)->count(),
             'uptime' => $sites->avg('uptime') ?? 0.00,
         ];
+
+        Cache::store('redis')->set($cacheKey, $stats, 60);
+
+        return $stats;
     }
 
     public function render(): Factory|View

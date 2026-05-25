@@ -52,38 +52,49 @@
                         </div>
                     </div>
 
+                    @php
+                        $isOnline = $cachedStatus['is_online'] ?? $site->is_online;
+                    @endphp
+
                     <span
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold flex-shrink-0 {{ $site->is_online ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold flex-shrink-0 {{ $isOnline ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
                         <span
-                            class="w-2 h-2 rounded-full {{ $site->is_online ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
-                        {{ $site->is_online ? 'ONLINE' : 'OFFLINE' }}
+                            class="w-2 h-2 rounded-full {{ $isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
+                        {{ $isOnline ? 'ONLINE' : 'OFFLINE' }}
                     </span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
                         <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Uptime</p>
-                        <p class="text-2xl font-bold text-white font-mono">{{ number_format($site->uptime, 2) }}%</p>
+                        @php
+                            $uptime = $cachedStatus['uptime'] ?? $site->uptime;
+                            $responseTime = $cachedStatus['response_time'] ?? $site->response_time;
+                            $statusCode = $cachedStatus['status_code'] ?? $site->status_code;
+                            $lastCheckedAt = $cachedStatus['last_checked_at'] ?? $site->last_checked_at?->toIso8601String();
+                        @endphp
+
+                        <p class="text-2xl font-bold text-white font-mono">{{ number_format($uptime, 2) }}%</p>
                     </div>
 
                     <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
                         <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Response Time</p>
                         <p class="text-2xl font-bold text-white font-mono">
-                            {{ $site->response_time !== null ? number_format($site->response_time, 0) . ' ms' : 'N/A' }}
+                            {{ $responseTime !== null ? number_format((float) $responseTime, 0) . ' ms' : 'N/A' }}
                         </p>
                     </div>
 
                     <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
                         <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Status Code</p>
                         <p class="text-2xl font-bold text-white font-mono">
-                            {{ $site->status_code ?? 'N/A' }}
+                            {{ $statusCode ?? 'N/A' }}
                         </p>
                     </div>
 
                     <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
                         <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Last Checked</p>
                         <p class="text-2xl font-bold text-white">
-                            {{ $site->last_checked_at?->diffForHumans() ?? 'Never' }}
+                            {{ $lastCheckedAt !== null ? \Carbon\Carbon::parse($lastCheckedAt)->diffForHumans() : 'Never' }}
                         </p>
                     </div>
                 </div>
