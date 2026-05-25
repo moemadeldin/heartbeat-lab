@@ -9,10 +9,28 @@
                 <h1 class="text-2xl font-bold text-white">Heartbeat Lab</h1>
             </div>
 
-            <a href="{{ route('public.status') }}"
-                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                &larr; Check Another Site
-            </a>
+            <div class="flex items-center gap-6">
+                <a href="{{ route('public.status') }}"
+                    class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                    &larr; Check Another Site
+                </a>
+
+                @auth
+                    <a href="{{ route('dashboard') }}"
+                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                        Dashboard
+                    </a>
+                @else
+                    <a href="{{ route('register') }}"
+                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                        Register
+                    </a>
+                    <a href="{{ route('login') }}"
+                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                        Login
+                    </a>
+                @endauth
+            </div>
         </div>
     </nav>
 
