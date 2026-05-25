@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Dashboard;
+use App\Livewire\PublicStatus;
+use App\Livewire\PublicStatusShow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Broadcast;
@@ -19,6 +21,9 @@ Route::get('/', function (): RedirectResponse {
 
     return to_route('login');
 });
+
+Route::get('/status', PublicStatus::class)->name('public.status');
+Route::get('/status/{site}', PublicStatusShow::class)->name('public.status.show');
 
 Route::prefix('auth')
     ->middleware(['guest'])
