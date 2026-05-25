@@ -19,7 +19,7 @@ Route::get('/', function (): RedirectResponse {
         return to_route('dashboard');
     }
 
-    return to_route('login');
+    return to_route('public.status');
 });
 
 Route::get('/status', PublicStatus::class)->name('public.status');
