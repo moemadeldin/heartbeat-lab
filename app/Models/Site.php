@@ -22,6 +22,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $status_code
  * @property float $uptime
  * @property float|null $response_time
+ * @property Carbon|null $ssl_expires_at
+ * @property string|null $ssl_issuer
+ * @property bool|null $ssl_valid
  * @property Carbon|null $last_checked_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -100,6 +103,9 @@ final class Site extends Model
             'status_code' => 'integer',
             'uptime' => 'float',
             'response_time' => 'float',
+            'ssl_expires_at' => 'datetime',
+            'ssl_issuer' => 'string',
+            'ssl_valid' => 'boolean',
             'last_checked_at' => 'datetime',
         ];
     }

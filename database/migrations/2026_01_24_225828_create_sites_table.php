@@ -26,6 +26,9 @@ return new class extends Migration
             $table->timestamp('last_checked_at')->index()->nullable();
             $table->integer('status_code')->nullable();
             $table->decimal('response_time', 8, 2)->nullable();
+            $table->timestamp('ssl_expires_at')->nullable();
+            $table->string('ssl_issuer', 255)->nullable();
+            $table->boolean('ssl_valid')->nullable();
             $table->timestamps();
             $table->unique(['user_id', 'url']);
             $table->unique(['user_id', 'name']);

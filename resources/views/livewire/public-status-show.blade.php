@@ -98,6 +98,70 @@
                         </p>
                     </div>
                 </div>
+
+                <div class="mt-6 bg-gray-900/30 rounded-lg border border-gray-700/50 p-5">
+                    <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3">SSL Certificate</p>
+
+                    @php
+                        $sslDaysLeft = $site->ssl_expires_at !== null ? now()->diffInDays($site->ssl_expires_at, false) : null;
+                        $sslBadgeClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
+                        $sslBadgeText = 'Not Available';
+                        $sslLabel = 'Not Checked';
+
+                        if ($site->ssl_valid === true && $sslDaysLeft !== null) {
+                            if ($sslDaysLeft > 30) {
+                                $sslBadgeClass = 'bg-green-500/10 text-green-400 border border-green-500/20';
+                                $sslBadgeText = 'Valid';
+                                $sslLabel = $sslDaysLeft > 365 ? 'Expires in ' . round($sslDaysLeft / 365, 1) . ' years' : 'Expires in ' . $sslDaysLeft . ' days';
+                            } elseif ($sslDaysLeft > 14) {
+                                $sslBadgeClass = 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
+                                $sslBadgeText = 'Expiring';
+                                $sslLabel = $sslDaysLeft . ' days left';
+                            } elseif ($sslDaysLeft > 0) {
+                                $sslBadgeClass = 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
+                                $sslBadgeText = 'Expiring Soon';
+                                $sslLabel = $sslDaysLeft . ' days left';
+                            } else {
+                                $sslBadgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                                $sslBadgeText = 'Expired';
+                                $sslLabel = 'Certificate expired';
+                            }
+                        } elseif ($site->ssl_valid === false && $site->ssl_expires_at !== null) {
+                            $sslBadgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                            $sslBadgeText = 'Expired';
+                            $sslLabel = 'Certificate expired';
+                        } elseif (str_starts_with((string) $site->url, 'https://')) {
+                            $sslBadgeClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
+                            $sslBadgeText = 'Pending';
+                            $sslLabel = 'Not yet checked';
+                        }
+                    @endphp
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $sslBadgeClass }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ str_contains($sslBadgeClass, 'bg-green') ? 'bg-green-400' : (str_contains($sslBadgeClass, 'bg-yellow') ? 'bg-yellow-400' : (str_contains($sslBadgeClass, 'bg-orange') ? 'bg-orange-400' : (str_contains($sslBadgeClass, 'bg-red') ? 'bg-red-400' : 'bg-gray-400'))) }}"></span>
+                                {{ $sslBadgeText }}
+                            </span>
+
+                            @if ($site->ssl_valid === true)
+                                <span class="text-gray-300 text-sm">{{ $sslLabel }}</span>
+                            @elseif ($site->ssl_expires_at !== null || !str_starts_with((string) $site->url, 'https://'))
+                                <span class="text-gray-500 text-sm">{{ $sslLabel }}</span>
+                            @else
+                                <span class="text-gray-500 text-sm">{{ $sslLabel }}</span>
+                            @endif
+
+                            @if ($site->ssl_issuer)
+                                <span class="text-gray-500 text-xs">by {{ $site->ssl_issuer }}</span>
+                            @endif
+                        </div>
+
+                        @if ($site->ssl_expires_at)
+                            <span class="text-gray-500 text-xs">{{ $site->ssl_expires_at->format('M j, Y') }}</span>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 

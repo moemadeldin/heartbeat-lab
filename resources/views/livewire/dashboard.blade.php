@@ -118,6 +118,7 @@
                                 <tr class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                                     <th class="px-8 py-4">Site</th>
                                     <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">SSL</th>
                                     <th class="px-6 py-4">Uptime</th>
                                     <th class="px-8 py-4 text-right">Actions</th>
                                 </tr>
@@ -143,6 +144,41 @@
                                                 <span
                                                     class="w-1.5 h-1.5 rounded-full {{ $site->is_online ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
                                                 {{ $site->is_online ? 'ONLINE' : 'OFFLINE' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-5">
+                                            @php
+                                                $sslDaysLeft = $site->ssl_expires_at !== null ? now()->diffInDays($site->ssl_expires_at, false) : null;
+                                                $sslClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
+                                                $sslText = '—';
+
+                                                if ($site->ssl_valid === true && $sslDaysLeft !== null) {
+                                                    if ($sslDaysLeft > 30) {
+                                                        $sslClass = 'bg-green-500/10 text-green-400 border border-green-500/20';
+                                                        $sslText = $sslDaysLeft > 365 ? round($sslDaysLeft / 365, 1) . 'y' : $sslDaysLeft . 'd';
+                                                    } elseif ($sslDaysLeft > 14) {
+                                                        $sslClass = 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
+                                                        $sslText = $sslDaysLeft . 'd';
+                                                    } elseif ($sslDaysLeft > 0) {
+                                                        $sslClass = 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
+                                                        $sslText = $sslDaysLeft . 'd';
+                                                    } else {
+                                                        $sslClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                                                        $sslText = 'Expired';
+                                                    }
+                                                } elseif ($site->ssl_valid === false && $site->ssl_expires_at !== null) {
+                                                    $sslClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
+                                                    $sslText = 'Expired';
+                                                } elseif (str_starts_with((string) $site->url, 'https://')) {
+                                                    $sslClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
+                                                    $sslText = 'Pending';
+                                                }
+                                            @endphp
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $sslClass }}">
+                                                <span
+                                                    class="w-1.5 h-1.5 rounded-full {{ str_contains($sslClass, 'bg-green') ? 'bg-green-400' : (str_contains($sslClass, 'bg-yellow') ? 'bg-yellow-400' : (str_contains($sslClass, 'bg-orange') ? 'bg-orange-400' : (str_contains($sslClass, 'bg-red') ? 'bg-red-400' : 'bg-gray-400'))) }}"></span>
+                                                {{ $sslText }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-5 text-gray-200 font-mono">
