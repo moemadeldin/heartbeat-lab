@@ -23,6 +23,8 @@ final class CheckSiteJob implements ShouldQueue
     public function handle(HttpFactory $http): void
     {
         try {
+            $previousOnline = $this->site->is_online ?? false;
+
             $startTime = microtime(true);
 
             $response = Http::timeout(10)
@@ -53,9 +55,10 @@ final class CheckSiteJob implements ShouldQueue
                 'response_time' => $responseTime,
             ]);
 
-            $this->dispatchStatusChangedEvent($isOnline, $response->status(), $responseTime);
+            $this->dispatchStatusChangedEvent($isOnline, $response->status(), $responseTime, $previousOnline);
 
         } catch (Exception $exception) {
+            $previousOnline = $this->site->is_online ?? false;
             $this->site->update([
                 'is_online' => false,
                 'status_code' => null,
@@ -71,13 +74,13 @@ final class CheckSiteJob implements ShouldQueue
                 'error' => $exception->getMessage(),
             ]);
 
-            $this->dispatchStatusChangedEvent(false, null, null);
+            $this->dispatchStatusChangedEvent(false, null, null, $previousOnline);
         }
     }
 
-    private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime): void
+    private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime, bool $previousOnline = false): void
     {
-        event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime));
+        event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime, $previousOnline));
     }
 
     private function calculateAndUpdateUptime(bool $isOnline): void

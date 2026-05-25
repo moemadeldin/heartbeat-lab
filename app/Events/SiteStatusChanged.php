@@ -21,7 +21,8 @@ final class SiteStatusChanged implements ShouldBroadcastNow
         public Site $site,
         public bool $isOnline,
         public ?int $statusCode,
-        public ?float $responseTime
+        public ?float $responseTime,
+        public bool $previousOnline = false
     ) {}
 
     public function broadcastOn(): array
