@@ -31,11 +31,11 @@ final class SiteDownNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $statusText = $this->statusCode !== null
-            ? "HTTP {$this->statusCode}"
+            ? 'HTTP ' . $this->statusCode
             : 'Connection Error';
 
         return (new MailMessage)
-            ->subject("[Heartbeat Lab] \u{1F534} {$this->site->name} is DOWN")
+            ->subject(sprintf('[Heartbeat Lab] 🔴 %s is DOWN', $this->site->name))
             ->markdown('emails.site-status', [
                 'site' => $this->site,
                 'isOnline' => false,

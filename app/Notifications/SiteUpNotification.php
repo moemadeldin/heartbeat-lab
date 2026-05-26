@@ -31,11 +31,11 @@ final class SiteUpNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("[Heartbeat Lab] \u{1F7E2} {$this->site->name} is back ONLINE")
+            ->subject(sprintf('[Heartbeat Lab] 🟢 %s is back ONLINE', $this->site->name))
             ->markdown('emails.site-status', [
                 'site' => $this->site,
                 'isOnline' => true,
-                'statusText' => "HTTP {$this->statusCode}",
+                'statusText' => 'HTTP ' . $this->statusCode,
                 'responseTime' => $this->responseTime,
                 'checkedAt' => $this->site->last_checked_at,
                 'dashboardUrl' => url('/dashboard'),
