@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use Illuminate\Support\Carbon;
 use App\Models\Site;
 use App\Notifications\SslCertExpiringNotification;
 use Exception;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
+use OpenSSLCertificate;
 
 final class CheckSslJob implements ShouldQueue
 {
@@ -22,7 +24,7 @@ final class CheckSslJob implements ShouldQueue
     {
         $parsedHost = parse_url($this->site->url, PHP_URL_HOST);
 
-        if (!is_string($parsedHost)) {
+        if (! is_string($parsedHost)) {
             Log::warning('SSL check skipped: invalid URL', ['site_id' => $this->site->id]);
 
             return;
@@ -67,7 +69,7 @@ final class CheckSslJob implements ShouldQueue
     }
 
     /**
-     * @return array{valid: bool, expires_at: \Illuminate\Support\Carbon|null, issuer: string|null}
+     * @return array{valid: bool, expires_at: Carbon|null, issuer: string|null}
      */
     private function fetchCertificate(string $host): array
     {
@@ -106,7 +108,7 @@ final class CheckSslJob implements ShouldQueue
 
         if (is_array($sslOptions) && isset($sslOptions['peer_certificate'])) {
             $candidate = $sslOptions['peer_certificate'];
-            if ($candidate instanceof \OpenSSLCertificate || is_string($candidate)) {
+            if ($candidate instanceof OpenSSLCertificate || is_string($candidate)) {
                 $peerCert = $candidate;
             }
         }
@@ -122,7 +124,6 @@ final class CheckSslJob implements ShouldQueue
         }
 
         /** @var array{validTo_time_t?: int, issuer?: array{O?: string, CN?: string}} $cert */
-
         $validToTime = (int) ($cert['validTo_time_t'] ?? 0);
 
         return [
@@ -132,7 +133,7 @@ final class CheckSslJob implements ShouldQueue
         ];
     }
 
-    private function checkExpiryThreshold(\Illuminate\Support\Carbon $expiresAt): void
+    private function checkExpiryThreshold(Carbon $expiresAt): void
     {
         $daysUntilExpiry = (int) now()->diffInDays($expiresAt, false);
 
