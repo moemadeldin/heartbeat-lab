@@ -19,10 +19,11 @@ final class PublicStatus extends Component
             'url' => ['required', 'url'],
         ]);
 
-        $site = Site::where('url', $this->url)->first();
+        $site = Site::query()->where('url', $this->url)->first();
 
         if ($site === null) {
             $this->addError('url', 'No monitored site found with that URL.');
+
             return;
         }
 
