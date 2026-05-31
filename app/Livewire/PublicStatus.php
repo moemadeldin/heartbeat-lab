@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use App\Models\Site;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -19,15 +18,7 @@ final class PublicStatus extends Component
             'url' => ['required', 'url'],
         ]);
 
-        $site = Site::query()->where('url', $this->url)->first();
-
-        if ($site === null) {
-            $this->addError('url', 'No monitored site found with that URL.');
-
-            return;
-        }
-
-        $this->redirectRoute('public.status.show', $site);
+        $this->redirectRoute('public.status.show', ['url' => $this->url]);
     }
 
     public function render(): Factory|View

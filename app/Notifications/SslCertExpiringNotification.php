@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use Illuminate\Support\Carbon;
 use App\Models\Site;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Carbon;
 
 final class SslCertExpiringNotification extends Notification implements ShouldQueue
 {
@@ -32,8 +32,8 @@ final class SslCertExpiringNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         $subject = $this->daysUntilExpiry <= 0
-            ? '[Heartbeat Lab] 🔴 SSL certificate EXPIRED for ' . $this->site->name
-            : '[Heartbeat Lab] 🟡 SSL certificate expiring for ' . $this->site->name;
+            ? '[Heartbeat Lab] 🔴 SSL certificate EXPIRED for '.$this->site->name
+            : '[Heartbeat Lab] 🟡 SSL certificate expiring for '.$this->site->name;
 
         return (new MailMessage)
             ->subject($subject)

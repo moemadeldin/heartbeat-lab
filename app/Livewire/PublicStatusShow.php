@@ -4,35 +4,80 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use App\Models\Site;
+use Exception;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Redis;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Http;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 final class PublicStatusShow extends Component
 {
-    public Site $site;
+    #[Url(as: 'url')]
+    public string $url = '';
 
-    /** @var array<string, mixed>|null */
-    public ?array $cachedStatus = null;
+    public ?bool $isOnline = null;
+
+    public ?int $statusCode = null;
+
+    public ?float $responseTime = null;
+
+    public ?string $error = null;
+
+    public ?string $sslValid = null;
+
+    public ?string $sslIssuer = null;
+
+    public ?int $sslDaysLeft = null;
+
+    public bool $checked = false;
 
     public function mount(): void
     {
-        $data = Redis::get(sprintf('site:%s:status', $this->site->id));
+        if ($this->url === '') {
+            $this->redirectRoute('public.status');
 
-        if (is_string($data)) {
-            /** @var array<string, mixed>|null $decoded */
-            $decoded = json_decode($data, true);
-
-            if (is_array($decoded)) {
-                $this->cachedStatus = $decoded;
-            }
+            return;
         }
+
+        if (! filter_var($this->url, FILTER_VALIDATE_URL)) {
+            $this->error = 'Invalid URL provided.';
+
+            return;
+        }
+
+        $this->performCheck();
     }
 
     public function render(): Factory|View
     {
         return view('livewire.public-status-show');
+    }
+
+    private function performCheck(): void
+    {
+        $startTime = microtime(true);
+
+        try {
+            /** @var Response $response */
+            $response = Http::timeout(10)
+                ->withHeaders([
+                    'User-Agent' => 'Heartbeat-Lab/1.0',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                ])
+                ->get($this->url);
+
+            $this->responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            $this->statusCode = $response->status();
+            $this->isOnline = $response->successful();
+        } catch (Exception $exception) {
+            $this->isOnline = false;
+            $this->statusCode = null;
+            $this->responseTime = null;
+            $this->error = $exception->getMessage();
+        }
+
+        $this->checked = true;
     }
 }

@@ -37,7 +37,7 @@
 
         <h2 class="text-4xl font-bold text-white mb-4">Check Site Status</h2>
         <p class="text-gray-400 text-lg mb-12 max-w-lg mx-auto">
-            Enter a website URL to check its current status and uptime.
+            Enter any website URL to check its current status in real-time.
         </p>
 
         <form wire:submit="search" class="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">

@@ -31,7 +31,7 @@ final class SiteDownNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $statusText = $this->statusCode !== null
-            ? 'HTTP ' . $this->statusCode
+            ? 'HTTP '.$this->statusCode
             : 'Connection Error';
 
         return (new MailMessage)

@@ -24,7 +24,7 @@ Route::get('/', function (): RedirectResponse {
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/status', PublicStatus::class)->name('public.status');
-    Route::get('/status/{site}', PublicStatusShow::class)->name('public.status.show');
+    Route::get('/status/check', PublicStatusShow::class)->name('public.status.show');
 });
 
 Route::prefix('auth')

@@ -35,141 +35,78 @@
     </nav>
 
     <main class="max-w-3xl mx-auto py-16 px-8">
-        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700 overflow-hidden">
-            <div class="p-8 md:p-10">
-                <div class="flex items-start justify-between mb-8">
-                    <div class="flex items-center gap-5">
-                        <div
-                            class="w-14 h-14 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                            <span class="text-2xl">🌐</span>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-white">{{ $site->name }}</h2>
-                            <a href="{{ $site->url }}" target="_blank"
-                                class="text-gray-400 hover:text-indigo-400 transition-colors text-sm break-all">
-                                {{ $site->url }}
-                            </a>
-                        </div>
+        @if ($error)
+            <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-red-700/50 overflow-hidden">
+                <div class="p-8 md:p-10 text-center">
+                    <div
+                        class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                        <span class="text-3xl">⚠️</span>
                     </div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Unable to Check Site</h2>
+                    <p class="text-red-400">{{ $error }}</p>
+                    <a href="{{ route('public.status') }}"
+                        class="mt-6 inline-block text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">
+                        &larr; Try another URL
+                    </a>
+                </div>
+            </div>
+        @else
+            <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+                <div class="p-8 md:p-10">
+                    <div class="flex items-start justify-between mb-8">
+                        <div class="flex items-center gap-5">
+                            <div
+                                class="w-14 h-14 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                <span class="text-2xl">🌐</span>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">{{ parse_url($url, PHP_URL_HOST) }}</h2>
+                                <a href="{{ $url }}" target="_blank"
+                                    class="text-gray-400 hover:text-indigo-400 transition-colors text-sm break-all">
+                                    {{ $url }}
+                                </a>
+                            </div>
+                        </div>
 
-                    @php
-                        $isOnline = $cachedStatus['is_online'] ?? $site->is_online;
-                    @endphp
-
-                    <span
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold flex-shrink-0 {{ $isOnline ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
                         <span
-                            class="w-2 h-2 rounded-full {{ $isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
-                        {{ $isOnline ? 'ONLINE' : 'OFFLINE' }}
-                    </span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
-                        <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Uptime</p>
-                        @php
-                            $uptime = $cachedStatus['uptime'] ?? $site->uptime;
-                            $responseTime = $cachedStatus['response_time'] ?? $site->response_time;
-                            $statusCode = $cachedStatus['status_code'] ?? $site->status_code;
-                            $lastCheckedAt = $cachedStatus['last_checked_at'] ?? $site->last_checked_at?->toIso8601String();
-                        @endphp
-
-                        <p class="text-2xl font-bold text-white font-mono">{{ number_format($uptime, 2) }}%</p>
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-bold flex-shrink-0 {{ $isOnline ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
+                            <span
+                                class="w-2 h-2 rounded-full {{ $isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
+                            {{ $isOnline ? 'ONLINE' : 'OFFLINE' }}
+                        </span>
                     </div>
 
-                    <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
-                        <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Response Time</p>
-                        <p class="text-2xl font-bold text-white font-mono">
-                            {{ $responseTime !== null ? number_format((float) $responseTime, 0) . ' ms' : 'N/A' }}
-                        </p>
-                    </div>
-
-                    <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
-                        <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Status Code</p>
-                        <p class="text-2xl font-bold text-white font-mono">
-                            {{ $statusCode ?? 'N/A' }}
-                        </p>
-                    </div>
-
-                    <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
-                        <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Last Checked</p>
-                        <p class="text-2xl font-bold text-white">
-                            {{ $lastCheckedAt !== null ? \Carbon\Carbon::parse($lastCheckedAt)->diffForHumans() : 'Never' }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="mt-6 bg-gray-900/30 rounded-lg border border-gray-700/50 p-5">
-                    <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3">SSL Certificate</p>
-
-                    @php
-                        $sslDaysLeft = $site->ssl_expires_at !== null ? now()->diffInDays($site->ssl_expires_at, false) : null;
-                        $sslBadgeClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
-                        $sslBadgeText = 'Not Available';
-                        $sslLabel = 'Not Checked';
-
-                        if ($site->ssl_valid === true && $sslDaysLeft !== null) {
-                            if ($sslDaysLeft > 30) {
-                                $sslBadgeClass = 'bg-green-500/10 text-green-400 border border-green-500/20';
-                                $sslBadgeText = 'Valid';
-                                $sslLabel = $sslDaysLeft > 365 ? 'Expires in ' . round($sslDaysLeft / 365, 1) . ' years' : 'Expires in ' . $sslDaysLeft . ' days';
-                            } elseif ($sslDaysLeft > 14) {
-                                $sslBadgeClass = 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
-                                $sslBadgeText = 'Expiring';
-                                $sslLabel = $sslDaysLeft . ' days left';
-                            } elseif ($sslDaysLeft > 0) {
-                                $sslBadgeClass = 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
-                                $sslBadgeText = 'Expiring Soon';
-                                $sslLabel = $sslDaysLeft . ' days left';
-                            } else {
-                                $sslBadgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
-                                $sslBadgeText = 'Expired';
-                                $sslLabel = 'Certificate expired';
-                            }
-                        } elseif ($site->ssl_valid === false && $site->ssl_expires_at !== null) {
-                            $sslBadgeClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
-                            $sslBadgeText = 'Expired';
-                            $sslLabel = 'Certificate expired';
-                        } elseif (str_starts_with((string) $site->url, 'https://')) {
-                            $sslBadgeClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
-                            $sslBadgeText = 'Pending';
-                            $sslLabel = 'Not yet checked';
-                        }
-                    @endphp
-
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $sslBadgeClass }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ str_contains($sslBadgeClass, 'bg-green') ? 'bg-green-400' : (str_contains($sslBadgeClass, 'bg-yellow') ? 'bg-yellow-400' : (str_contains($sslBadgeClass, 'bg-orange') ? 'bg-orange-400' : (str_contains($sslBadgeClass, 'bg-red') ? 'bg-red-400' : 'bg-gray-400'))) }}"></span>
-                                {{ $sslBadgeText }}
-                            </span>
-
-                            @if ($site->ssl_valid === true)
-                                <span class="text-gray-300 text-sm">{{ $sslLabel }}</span>
-                            @elseif ($site->ssl_expires_at !== null || !str_starts_with((string) $site->url, 'https://'))
-                                <span class="text-gray-500 text-sm">{{ $sslLabel }}</span>
-                            @else
-                                <span class="text-gray-500 text-sm">{{ $sslLabel }}</span>
-                            @endif
-
-                            @if ($site->ssl_issuer)
-                                <span class="text-gray-500 text-xs">by {{ $site->ssl_issuer }}</span>
-                            @endif
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                            <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Response Time</p>
+                            <p class="text-2xl font-bold text-white font-mono">
+                                {{ $responseTime !== null ? number_format($responseTime, 0) . ' ms' : 'N/A' }}
+                            </p>
                         </div>
 
-                        @if ($site->ssl_expires_at)
-                            <span class="text-gray-500 text-xs">{{ $site->ssl_expires_at->format('M j, Y') }}</span>
-                        @endif
+                        <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                            <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Status Code</p>
+                            <p class="text-2xl font-bold text-white font-mono">
+                                {{ $statusCode ?? 'N/A' }}
+                            </p>
+                        </div>
+
+                        <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                            <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Checked</p>
+                            <p class="text-2xl font-bold text-white">
+                                Just now
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="mt-8 text-center">
-            <a href="{{ route('public.status') }}"
-                class="text-gray-500 hover:text-white transition-colors text-sm">
-                &larr; Check the status of another site
-            </a>
-        </div>
+            <div class="mt-8 text-center">
+                <a href="{{ route('public.status') }}"
+                    class="text-gray-500 hover:text-white transition-colors text-sm">
+                    &larr; Check the status of another site
+                </a>
+            </div>
+        @endif
     </main>
 </div>

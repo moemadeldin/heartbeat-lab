@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use Illuminate\Support\Carbon;
 use App\Models\Site;
 use App\Notifications\SslCertExpiringNotification;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use OpenSSLCertificate;

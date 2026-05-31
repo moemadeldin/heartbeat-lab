@@ -35,7 +35,7 @@ final class SiteUpNotification extends Notification implements ShouldQueue
             ->markdown('emails.site-status', [
                 'site' => $this->site,
                 'isOnline' => true,
-                'statusText' => 'HTTP ' . $this->statusCode,
+                'statusText' => 'HTTP '.$this->statusCode,
                 'responseTime' => $this->responseTime,
                 'checkedAt' => $this->site->last_checked_at,
                 'dashboardUrl' => url('/dashboard'),
