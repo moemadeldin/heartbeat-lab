@@ -41,9 +41,4 @@ final class Login extends Component
         Auth::login($user);
         $this->redirectIntended(default: route('dashboard'), navigate: true);
     }
-
-    // public function render(): Factory|View
-    // {
-    //     return view('livewire.auth.login');
-    // }
 }

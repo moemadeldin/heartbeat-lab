@@ -6,19 +6,19 @@ namespace App\Livewire;
 
 use App\Models\Site;
 use App\Models\User;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 /**
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Site> $sites
  */
+#[Title('Dashboard')]
 final class Dashboard extends Component
 {
     #[Locked]
@@ -27,17 +27,14 @@ final class Dashboard extends Component
     #[Locked]
     public ?string $deleteId = null;
 
-    #[On('site-created')]
-    #[On('site-updated')]
-    #[On('site-deleted')]
-    #[On('site-status-updated')]
+    #[On(['site-created', 'site-updated', 'site-deleted', 'site-status-updated'])]
     public function refreshSites(): void
     {
         unset($this->sites, $this->stats);
         $this->selectedSiteId = null;
         $this->deleteId = null;
 
-        Cache::store('redis')->forget(sprintf('user:%s:dashboard:stats', Auth::id()));
+        Cache::store('redis')->forget($this->statsCacheKey());
     }
 
     public function editSite(string $siteId): void
@@ -63,12 +60,9 @@ final class Dashboard extends Component
     #[Computed]
     public function sites(): Collection
     {
-        /** @var User $user */
-        $user = Auth::user();
-
         return Site::query()
-            ->userSites($user)
-            ->orderBy('created_at')
+            ->userSites($this->authUser())
+            ->orderBy('created_at', 'asc')
             ->distinct()
             ->get();
     }
@@ -84,12 +78,7 @@ final class Dashboard extends Component
     #[Computed]
     public function stats(): array
     {
-        /** @var User $user */
-        $user = Auth::user();
-
-        $cacheKey = sprintf('user:%s:dashboard:stats', $user->id);
-
-        $cached = Cache::store('redis')->get($cacheKey);
+        $cached = Cache::store('redis')->get($this->statsCacheKey());
 
         if ($cached !== null) {
             /** @var array{total: int, online: int, offline: int, uptime: float} $cached */
@@ -106,13 +95,18 @@ final class Dashboard extends Component
             'uptime' => $sites->avg('uptime') ?? 0.00,
         ];
 
-        Cache::store('redis')->set($cacheKey, $stats, 60);
+        Cache::store('redis')->set($this->statsCacheKey(), $stats, 60);
 
         return $stats;
     }
 
-    public function render(): Factory|View
+    private function authUser(): User
     {
-        return view('livewire.dashboard');
+        return Auth::user();
+    }
+
+    private function statsCacheKey(): string
+    {
+        return sprintf('user:%s:dashboard:stats', Auth::id());
     }
 }

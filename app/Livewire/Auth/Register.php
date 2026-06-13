@@ -42,9 +42,4 @@ final class Register extends Component
 
         $this->redirectRoute('dashboard', navigate: true);
     }
-
-    // public function render(): Factory|View
-    // {
-    //     return view('livewire.auth.register');
-    // }
 }
