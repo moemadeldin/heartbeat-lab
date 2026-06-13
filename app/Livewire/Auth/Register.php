@@ -6,13 +6,13 @@ namespace App\Livewire\Auth;
 
 use App\Actions\Auth\CreateUserAction;
 use App\Events\UserRegistered;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
+#[Title('Register')]
 #[Layout('layouts.auth')]
 
 final class Register extends Component
@@ -30,19 +30,21 @@ final class Register extends Component
 
     public function register(CreateUserAction $action): void
     {
-        /** @var array<string> $validated */
-        $validated = $this->validate();
+        $this->validate();
 
-        $user = $action->execute($validated);
+        $user = $action->execute([
+            'name' => $this->name,
+            'email' => $this->email,
+            'password' => $this->password,
+        ]);
         Auth::login($user);
-        session()->regenerate();
         event(new UserRegistered($user));
 
         $this->redirectRoute('dashboard', navigate: true);
     }
 
-    public function render(): Factory|View
-    {
-        return view('livewire.auth.register');
-    }
+    // public function render(): Factory|View
+    // {
+    //     return view('livewire.auth.register');
+    // }
 }

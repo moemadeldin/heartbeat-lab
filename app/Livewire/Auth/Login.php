@@ -6,12 +6,13 @@ namespace App\Livewire\Auth;
 
 use App\Actions\Auth\CreateSessionAction;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
+#[Title('Login')]
 #[Layout('layouts.auth')]
 final class Login extends Component
 {
@@ -23,22 +24,26 @@ final class Login extends Component
 
     public function login(CreateSessionAction $action): void
     {
-        /** @var array<string> $validated */
-        $validated = $this->validate();
+
+        $this->validate();
 
         try {
-            $action->execute($validated);
-            $this->redirectRoute('dashboard');
-
+            $user = $action->execute([
+                'email' => $this->email,
+                'password' => $this->password,
+            ]);
         } catch (AuthenticationException $authenticationException) {
             $this->addError('email', $authenticationException->getMessage());
-            $this->addError('password', $authenticationException->getMessage());
+
+            return;
         }
 
+        Auth::login($user);
+        $this->redirectIntended(default: route('dashboard'), navigate: true);
     }
 
-    public function render(): Factory|View
-    {
-        return view('livewire.auth.login');
-    }
+    // public function render(): Factory|View
+    // {
+    //     return view('livewire.auth.login');
+    // }
 }

@@ -61,7 +61,7 @@ it('cannot login user with wrong password', function (): void {
         ->set('email', 'john@gmail.com')
         ->set('password', 'password12')
         ->call('login')
-        ->assertHasErrors(['password']);
+        ->assertHasErrors(['email']);
 
     expect(auth()->check())->toBeFalse();
 });
