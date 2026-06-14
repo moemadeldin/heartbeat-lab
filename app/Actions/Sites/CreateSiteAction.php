@@ -6,6 +6,7 @@ namespace App\Actions\Sites;
 
 use App\Exceptions\DuplicateSiteException;
 use App\Jobs\CheckSiteJob;
+use App\Jobs\CheckSslJob;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +30,7 @@ final readonly class CreateSiteAction
         $site = $user->sites()->create($data);
 
         dispatch(new CheckSiteJob($site));
+        dispatch(new CheckSslJob($site));
 
         Log::info('Site Created By: ', [
             'user_id' => auth()->id(),

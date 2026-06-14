@@ -26,6 +26,13 @@
         Welcome, <span x-text="name"></span>!
     </div>
 
+    <x-navbar>
+        <a href="{{ route('public.status') }}"
+            class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+            Check Status
+        </a>
+    </x-navbar>
+
     <div class="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
         {{ $slot }}
     </div>

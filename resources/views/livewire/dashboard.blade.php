@@ -1,27 +1,15 @@
 <div class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900">
-    <nav class="bg-gray-800/50 backdrop-blur-sm shadow-lg border-b border-gray-700">
-        <div class="max-w-7xl mx-auto px-8 py-5 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center text-2xl shadow-lg">
-                    💓
-                </div>
-                <h1 class="text-2xl font-bold text-white">Heartbeat Lab</h1>
+    <x-navbar heading-link="{{ route('dashboard') }}">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-9 h-9 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30">
+                <span
+                    class="text-indigo-400 font-semibold text-sm">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
             </div>
-
-            <div class="flex items-center gap-6">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-9 h-9 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30">
-                        <span
-                            class="text-indigo-400 font-semibold text-sm">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
-                    </div>
-                    <span class="text-gray-200 font-medium">{{ Auth::user()->name }}</span>
-                </div>
-                <livewire:auth.logout />
-            </div>
+            <span class="text-gray-200 font-medium">{{ Auth::user()->name }}</span>
         </div>
-    </nav>
+        <livewire:auth.logout />
+    </x-navbar>
 
     <main class="max-w-7xl mx-auto py-12 px-8" x-data="{ showCreateModal: false }"
         @site-created.window="showCreateModal = false"
@@ -148,7 +136,7 @@
                                         </td>
                                         <td class="px-6 py-5">
                                             @php
-                                                $sslDaysLeft = $site->ssl_expires_at !== null ? now()->diffInDays($site->ssl_expires_at, false) : null;
+                                                $sslDaysLeft = $site->ssl_expires_at !== null ? (int) now()->diffInDays($site->ssl_expires_at, false) : null;
                                                 $sslClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
                                                 $sslText = '—';
 

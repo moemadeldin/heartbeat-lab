@@ -7,6 +7,7 @@ namespace App\Livewire\Sites;
 use App\Actions\Sites\CreateSiteAction;
 use App\Exceptions\DuplicateSiteException;
 use App\Models\User;
+use App\Traits\NormalizeURL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -14,6 +15,8 @@ use Livewire\Component;
 
 final class CreateSite extends Component
 {
+    use NormalizeURL;
+
     #[Validate(['required', 'string', 'max:255'])]
     public string $name = '';
 
@@ -22,6 +25,8 @@ final class CreateSite extends Component
 
     public function store(CreateSiteAction $action): void
     {
+        $this->url = $this->normalize($this->url);
+
         /** @var array{name: string, url: string} $validated */
         $validated = $this->validate();
 

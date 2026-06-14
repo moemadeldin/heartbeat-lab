@@ -6,10 +6,10 @@ namespace App\Jobs;
 
 use App\Events\SiteStatusChanged;
 use App\Models\Site;
+use App\Utilities\HttpDefaults;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -20,17 +20,19 @@ final class CheckSiteJob implements ShouldQueue
 
     public function __construct(private Site $site) {}
 
-    public function handle(HttpFactory $http): void
+    public function handle(): void
     {
         try {
             $previousOnline = $this->site->is_online ?? false;
 
             $startTime = microtime(true);
 
-            $response = Http::timeout(10)
+            $response = Http::timeout(HttpDefaults::HTTP_TIMEOUT)
+                ->connectTimeout(HttpDefaults::CONNECT_TIMEOUT)
+                ->retry(HttpDefaults::RETRY_TIMES, HttpDefaults::RETRY_DELAY)
                 ->withHeaders([
-                    'User-Agent' => 'Heartbeat-Lab/1.0',
-                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'User-Agent' => HttpDefaults::USER_AGENT,
+                    'Accept' => HttpDefaults::ACCEPT,
                 ])
                 ->get($this->site->url);
 

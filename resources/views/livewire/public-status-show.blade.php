@@ -1,41 +1,61 @@
-<div class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900">
-    <nav class="bg-gray-800/50 backdrop-blur-sm shadow-lg border-b border-gray-700">
-        <div class="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center text-2xl shadow-lg">
-                    💓
-                </div>
-                <h1 class="text-2xl font-bold text-white">Heartbeat Lab</h1>
-            </div>
+<div class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900" wire:poll.2s="pollResult">
+    <x-navbar>
+        <a href="{{ route('public.status') }}"
+            class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+            &larr; Check Another Site
+        </a>
 
-            <div class="flex items-center gap-6">
-                <a href="{{ route('public.status') }}"
-                    class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                    &larr; Check Another Site
-                </a>
-
-                @auth
-                    <a href="{{ route('dashboard') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('register') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Register
-                    </a>
-                    <a href="{{ route('login') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Login
-                    </a>
-                @endauth
-            </div>
-        </div>
-    </nav>
+        @auth
+            <a href="{{ route('dashboard') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Dashboard
+            </a>
+        @else
+            <a href="{{ route('register') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Register
+            </a>
+            <a href="{{ route('login') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Login
+            </a>
+        @endauth
+    </x-navbar>
 
     <main class="max-w-3xl mx-auto py-16 px-8">
-        @if ($error)
+        @if ($loading && !$checked)
+            <div class="animate-pulse">
+                <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700 overflow-hidden">
+                    <div class="p-8 md:p-10">
+                        <div class="flex items-start justify-between mb-8">
+                            <div class="flex items-center gap-5">
+                                <div class="w-14 h-14 rounded-xl bg-gray-700"></div>
+                                <div class="space-y-3">
+                                    <div class="h-6 w-48 bg-gray-700 rounded"></div>
+                                    <div class="h-4 w-64 bg-gray-700 rounded"></div>
+                                </div>
+                            </div>
+                            <div class="h-8 w-24 bg-gray-700 rounded-md"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                                <div class="h-4 w-24 bg-gray-700 rounded mb-3"></div>
+                                <div class="h-8 w-20 bg-gray-700 rounded"></div>
+                            </div>
+                            <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                                <div class="h-4 w-24 bg-gray-700 rounded mb-3"></div>
+                                <div class="h-8 w-16 bg-gray-700 rounded"></div>
+                            </div>
+                            <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
+                                <div class="h-4 w-24 bg-gray-700 rounded mb-3"></div>
+                                <div class="h-8 w-20 bg-gray-700 rounded"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif ($checked && $error)
             <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-red-700/50 overflow-hidden">
                 <div class="p-8 md:p-10 text-center">
                     <div
@@ -50,7 +70,7 @@
                     </a>
                 </div>
             </div>
-        @else
+        @elseif ($checked)
             <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700 overflow-hidden">
                 <div class="p-8 md:p-10">
                     <div class="flex items-start justify-between mb-8">
@@ -92,10 +112,19 @@
                         </div>
 
                         <div class="bg-gray-900/30 p-5 rounded-lg border border-gray-700/50">
-                            <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Checked</p>
-                            <p class="text-2xl font-bold text-white">
-                                Just now
+                            <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">SSL</p>
+                            <p class="text-2xl font-bold text-white font-mono">
+                                @if ($sslValid === true)
+                                    <span class="text-green-400">{{ $sslDaysLeft }}d</span>
+                                @elseif ($sslValid === false)
+                                    <span class="text-red-400">Invalid</span>
+                                @else
+                                    N/A
+                                @endif
                             </p>
+                            @if ($sslIssuer)
+                                <p class="text-gray-500 text-xs mt-1">{{ $sslIssuer }}</p>
+                            @endif
                         </div>
                     </div>
                 </div>

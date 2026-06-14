@@ -1,33 +1,21 @@
 <div class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900">
-    <nav class="bg-gray-800/50 backdrop-blur-sm shadow-lg border-b border-gray-700">
-        <div class="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 bg-linear-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center text-2xl shadow-lg">
-                    💓
-                </div>
-                <h1 class="text-2xl font-bold text-white">Heartbeat Lab</h1>
-            </div>
-
-            <div class="flex items-center gap-6">
-                @auth
-                    <a href="{{ route('dashboard') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('register') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Register
-                    </a>
-                    <a href="{{ route('login') }}"
-                        class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-                        Login
-                    </a>
-                @endauth
-            </div>
-        </div>
-    </nav>
+    <x-navbar>
+        @auth
+            <a href="{{ route('dashboard') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Dashboard
+            </a>
+        @else
+            <a href="{{ route('register') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Register
+            </a>
+            <a href="{{ route('login') }}"
+                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+                Login
+            </a>
+        @endauth
+    </x-navbar>
 
     <main class="max-w-2xl mx-auto py-24 px-8 text-center">
         <div
@@ -44,7 +32,7 @@
             <div class="flex-1">
                 <input
                     wire:model="url"
-                    type="url"
+                    type="text"
                     placeholder="https://example.com"
                     class="w-full px-6 py-4 bg-gray-800/70 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-lg transition-all">
 

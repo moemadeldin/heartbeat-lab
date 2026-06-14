@@ -28,7 +28,7 @@
         <!-- Site URL -->
         <div>
             <label class="block text-sm font-semibold text-gray-200 mb-2">Website URL</label>
-            <input wire:model.defer="url" type="url" placeholder="https://example.com"
+            <input wire:model.defer="url" type="text" placeholder="https://example.com"
                 class="block w-full rounded-lg bg-gray-900/50 border border-gray-600 text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500">
             @error('url')
                 <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span>

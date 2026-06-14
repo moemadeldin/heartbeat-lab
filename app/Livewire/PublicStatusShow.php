@@ -4,34 +4,30 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use Exception;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
+use App\Jobs\CheckPublicStatusJob;
 use Illuminate\Support\Facades\RateLimiter;
-use Livewire\Attributes\Lazy;
-use Livewire\Attributes\On;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use OpenSSLCertificate;
 
 #[Title('Status Checker Result')]
-#[Lazy()]
 final class PublicStatusShow extends Component
 {
     private const int ATTEMPTS_LIMIT_PER_IP = 10;
 
     private const int DECAY_SECONDS = 60;
 
-    private const int HTTP_TIMEOUT = 10;
-
-    private const string USER_AGENT = 'Heartbeat-Lab/1.0';
-
-    private const string ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
-
     #[Url(as: 'url')]
     public string $url = '';
+
+    public string $token = '';
+
+    public bool $loading = true;
+
+    public int $pollCount = 0;
 
     public ?bool $isOnline = null;
 
@@ -57,117 +53,70 @@ final class PublicStatusShow extends Component
             return;
         }
 
-        if (! filter_var($this->url, FILTER_VALIDATE_URL)) {
-            $this->error = 'Invalid URL provided.';
-
-            return;
-        }
-
         $key = 'status-check:'.request()->ip();
 
         if (RateLimiter::tooManyAttempts($key, self::ATTEMPTS_LIMIT_PER_IP)) {
             $this->error = 'Too many requests. Please wait.';
+            $this->loading = false;
+            $this->checked = true;
 
             return;
         }
 
         RateLimiter::hit($key, self::DECAY_SECONDS);
 
-        $this->dispatch('do-check');
+        $this->token = Str::uuid()->toString();
+
+        dispatch(new CheckPublicStatusJob($this->url, $this->token));
     }
 
-    #[On('do-check')]
-    public function performCheck(): void
+    public function pollResult(): void
     {
-        if ($this->checked || $this->error !== null) {
+        if ($this->checked) {
             return;
         }
 
-        $startTime = microtime(true);
+        $this->pollCount++;
 
-        try {
-            /** @var Response $response */
-            $response = Http::timeout(self::HTTP_TIMEOUT)
-                ->withHeaders([
-                    'User-Agent' => self::USER_AGENT,
-                    'Accept' => self::ACCEPT,
-                ])
-                ->get($this->url);
+        if ($this->pollCount > 15) {
+            $this->error = 'The check timed out. Please try again.';
+            $this->loading = false;
+            $this->checked = true;
 
-            $this->responseTime = round((microtime(true) - $startTime) * 1000, 2);
-            $this->statusCode = $response->status();
-            $this->isOnline = $response->successful();
-        } catch (ConnectionException) {
-            $this->isOnline = false;
-            $this->statusCode = null;
-            $this->responseTime = null;
-            $this->error = 'Could not connect to host.';
-        } catch (Exception $exception) {
-            $this->isOnline = false;
-            $this->statusCode = null;
-            $this->responseTime = null;
-            $this->error = $exception->getMessage();
+            return;
         }
 
-        $this->checkSsl();
+        $cached = Redis::get(sprintf('public-check:%s', $this->token));
 
+        if ($cached === null) {
+            return;
+        }
+
+        /** @var array{
+         *     is_online: bool,
+         *     status_code: int|null,
+         *     response_time: float|null,
+         *     error: string|null,
+         *     ssl_valid: bool|null,
+         *     ssl_issuer: string|null,
+         *     ssl_days_left: int|null,
+         * } $data
+         */
+        $data = json_decode($cached, true);
+
+        $this->isOnline = $data['is_online'];
+        $this->statusCode = $data['status_code'];
+        $this->responseTime = $data['response_time'];
+        $this->error = $data['error'];
+        $this->sslValid = $data['ssl_valid'];
+        $this->sslIssuer = $data['ssl_issuer'];
+        $this->sslDaysLeft = $data['ssl_days_left'];
         $this->checked = true;
+        $this->loading = false;
     }
 
-    private function checkSsl(): void
+    public function render(): View
     {
-        $parsed = parse_url($this->url);
-
-        if (($parsed['scheme'] ?? '') !== 'https') {
-            return;
-        }
-
-        $host = $parsed['host'] ?? '';
-
-        if ($host === '') {
-            return;
-        }
-
-        try {
-            $context = stream_context_create([
-                'ssl' => [
-                    'capture_peer_cert' => true,
-                    'verify_peer' => true,
-                    'verify_peer_name' => true,
-                ],
-            ]);
-
-            $stream = stream_socket_client(
-                sprintf('ssl://%s:443', $host),
-                $errno,
-                $errstr,
-                10,
-                STREAM_CLIENT_CONNECT,
-                $context,
-            );
-
-            if (! $stream) {
-                $this->sslValid = false;
-
-                return;
-            }
-
-            $params = stream_context_get_params($stream);
-
-            /** @var OpenSSLCertificate $cert */
-            $cert = $params['options']['ssl']['peer_certificate'];
-
-            /** @var array{subject: array{CN: string}, issuer: array{CN: string, O: string}, validTo_time_t: int} $certInfo */
-            $certInfo = openssl_x509_parse($cert);
-
-            $expiresAt = $certInfo['validTo_time_t'];
-            $this->sslDaysLeft = (int) ceil(($expiresAt - time()) / 86400);
-            $this->sslValid = $this->sslDaysLeft > 0;
-            $this->sslIssuer = $certInfo['issuer']['O'] ?? $certInfo['issuer']['CN'] ?? 'Unknown';
-
-            fclose($stream);
-        } catch (Exception) {
-            $this->sslValid = false;
-        }
+        return view('livewire.public-status-show');
     }
 }
