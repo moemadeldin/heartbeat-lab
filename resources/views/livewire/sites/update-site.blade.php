@@ -15,17 +15,19 @@
     <form wire:submit="update" class="space-y-5">
         <div>
             <label class="block text-sm font-semibold text-gray-200 mb-2">Site Name</label>
-            <input wire:model="name" type="text"
+            <input wire:model.defer="name" type="text"
                 class="block w-full rounded-lg bg-gray-900/50 border border-gray-600 text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500">
             @error('name') <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="flex gap-3 pt-4">
             <button type="button" @click="$dispatch('close-modal')"
-                class="cursor-pointer flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colorsg">Cancel</button>
+                class="cursor-pointer flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-gray-600 transition-colors">Cancel</button>
             <button type="submit"
-                class="cursor-pointer flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl">Update
-                Site</button>
+                class="cursor-pointer flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl">
+                <span wire:loading.remove wire:target="update">Update Site</span>
+                <span wire:loading wire:target="update">Updating...</span>
+            </button>
         </div>
     </form>
 </div>

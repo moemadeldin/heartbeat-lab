@@ -14,7 +14,7 @@ beforeEach(function (): void {
 
 it('deletes a site', function (): void {
     Livewire::actingAs($this->user)
-        ->test(DeleteSite::class, ['siteId' => $this->site->id])
+        ->test(DeleteSite::class, ['site' => $this->site])
         ->call('delete')
         ->assertDispatched('site-deleted')
         ->assertDispatched('close-modal');

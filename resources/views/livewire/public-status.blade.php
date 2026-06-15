@@ -1,17 +1,14 @@
 <div class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900">
     <x-navbar>
         @auth
-            <a href="{{ route('dashboard') }}"
-                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+            <a href="{{ route('dashboard') }}" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                 Dashboard
             </a>
         @else
-            <a href="{{ route('register') }}"
-                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+            <a href="{{ route('register') }}" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                 Register
             </a>
-            <a href="{{ route('login') }}"
-                class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+            <a href="{{ route('login') }}" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
                 Login
             </a>
         @endauth
@@ -30,10 +27,7 @@
 
         <form wire:submit="search" class="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
             <div class="flex-1">
-                <input
-                    wire:model="url"
-                    type="text"
-                    placeholder="https://example.com"
+                <input wire:model.defer="url" type="text" placeholder="https://example.com"
                     class="w-full px-6 py-4 bg-gray-800/70 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-lg transition-all">
 
                 @error('url')

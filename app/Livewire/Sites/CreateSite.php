@@ -9,7 +9,6 @@ use App\Exceptions\DuplicateSiteException;
 use App\Models\User;
 use App\Traits\NormalizeURL;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -25,10 +24,10 @@ final class CreateSite extends Component
 
     public function store(CreateSiteAction $action): void
     {
-        $this->url = $this->normalize($this->url);
-
         /** @var array{name: string, url: string} $validated */
         $validated = $this->validate();
+
+        $validated['url'] = $this->normalize($validated['url']);
 
         /** @var User $user */
         $user = Auth::user();
@@ -48,11 +47,5 @@ final class CreateSite extends Component
         $this->reset(['name', 'url']);
         $this->dispatch('site-created');
         $this->dispatch('close-modal');
-        $this->dispatch('close-create-modal');
-    }
-
-    public function render(): View
-    {
-        return view('livewire.sites.create-site');
     }
 }

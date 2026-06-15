@@ -18,7 +18,7 @@
         <!-- Site Name -->
         <div>
             <label class="block text-sm font-semibold text-gray-200 mb-2">Site Name</label>
-            <input wire:model.defer="name" type="text" placeholder="My Awesome Site"
+            <input wire:model.defer.defer="name" type="text" placeholder="My Awesome Site"
                 class="block w-full rounded-lg bg-gray-900/50 border border-gray-600 text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500">
             @error('name')
                 <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span>
@@ -28,7 +28,7 @@
         <!-- Site URL -->
         <div>
             <label class="block text-sm font-semibold text-gray-200 mb-2">Website URL</label>
-            <input wire:model.defer="url" type="text" placeholder="https://example.com"
+            <input wire:model.defer.defer="url" type="text" placeholder="https://example.com"
                 class="block w-full rounded-lg bg-gray-900/50 border border-gray-600 text-white px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-500">
             @error('url')
                 <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span>
@@ -43,7 +43,8 @@
             </button>
             <button type="submit"
                 class="cursor-pointer flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl">
-                Add Site
+                <span wire:loading.remove wire:target="store">Add Site</span>
+                <span wire:loading wire:target="store">Adding...</span>
             </button>
         </div>
     </form>

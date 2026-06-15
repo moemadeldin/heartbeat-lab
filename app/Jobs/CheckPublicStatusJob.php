@@ -17,20 +17,20 @@ use Illuminate\Support\Facades\Redis;
 final class CheckPublicStatusJob implements ShouldQueue
 {
     use Queueable;
-    
+
     public function __construct(
         private readonly string $url,
         private readonly string $token,
     ) {}
 
-    public function handle(): void
+    public function handle(SslCertificateService $ssl): void
     {
         $startTime = microtime(true);
 
         try {
             $response = Http::timeout(HttpDefaults::HTTP_TIMEOUT)
                 ->connectTimeout(HttpDefaults::CONNECT_TIMEOUT)
-                ->retry(HttpDefaults::RETRY_TIMES, HttpDefaults::RETRY_DELAY)
+                ->retry(HttpDefaults::RETRY_TIMES, HttpDefaults::RETRY_DELAY, throw: false)
                 ->withHeaders([
                     'User-Agent' => HttpDefaults::USER_AGENT,
                     'Accept' => HttpDefaults::ACCEPT,
@@ -53,7 +53,7 @@ final class CheckPublicStatusJob implements ShouldQueue
             $error = $exception->getMessage();
         }
 
-        $sslData = app(SslCertificateService::class)->check($this->url);
+        $sslData = $ssl->check($this->url);
 
         $result = [
             'is_online' => $isOnline,

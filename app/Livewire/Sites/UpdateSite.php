@@ -8,8 +8,8 @@ use App\Actions\Sites\UpdateSiteAction;
 use App\Exceptions\DuplicateSiteException;
 use App\Models\Site;
 use App\Models\User;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -20,20 +20,15 @@ final class UpdateSite extends Component
 
     public Site $site;
 
-    public function mount(string $siteId): void
+    public function mount(Site $site): void
     {
-        /** @var User $user */
-        $user = Auth::user();
-        $this->site = Site::query()
-            ->userSites($user)
-            ->findOrFail($siteId);
-
+        abort_if($site->user_id !== Auth::id(), Response::HTTP_FORBIDDEN);
         $this->name = $this->site->name;
     }
 
     public function update(UpdateSiteAction $action): void
     {
-        /** @var array{name: string, url: string} $validated */
+        /** @var array{name: string} $validated */
         $validated = $this->validate();
         /** @var User $user */
         $user = Auth::user();
@@ -52,11 +47,16 @@ final class UpdateSite extends Component
         $this->dispatch('site-updated');
         $this->dispatch('close-modal');
 
-        $this->reset(['name']);
     }
 
-    public function render(): View
+    public function placeholder(): string
     {
-        return view('livewire.sites.update-site');
+        return <<<'HTML'
+        <div class="animate-pulse space-y-4">
+            <div class="h-6 bg-gray-700 rounded w-1/3"></div>
+            <div class="h-10 bg-gray-700 rounded"></div>
+            <div class="h-10 bg-gray-700 rounded"></div>
+        </div>
+        HTML;
     }
 }

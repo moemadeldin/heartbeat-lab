@@ -63,7 +63,7 @@ final class Dashboard extends Component
         return Site::query()
             ->userSites($this->authUser())
             ->orderBy('created_at', 'asc')
-            ->distinct()
+            ->select(['id', 'user_id', 'name', 'url', 'is_online', 'uptime', 'ssl_valid', 'ssl_expires_at', 'ssl_issuer'])
             ->get();
     }
 

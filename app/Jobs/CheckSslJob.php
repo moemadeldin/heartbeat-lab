@@ -28,7 +28,7 @@ final class CheckSslJob implements ShouldQueue
         $url = $this->site->url;
 
         try {
-            $result = app(SslCertificateService::class)->checkWithExpiry($url);
+            $result = resolve(SslCertificateService::class)->checkWithExpiry($url);
 
             $this->site->update([
                 'ssl_valid' => $result['ssl_valid'],

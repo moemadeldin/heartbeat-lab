@@ -11,11 +11,12 @@
         <livewire:auth.logout />
     </x-navbar>
 
-    <main class="max-w-7xl mx-auto py-12 px-8" x-data="{ showCreateModal: false }"
-        @site-created.window="showCreateModal = false"
-        @close-create-modal.window="showCreateModal = false"
-        @site-status-changed.window="$dispatch('site-status-updated')">
-
+    <main class="max-w-7xl mx-auto py-12 px-8"
+        x-data="{ showCreateModal: false, showEditModal: false, showDeleteModal: false }"
+        @site-created.window="showCreateModal = false" @close-create-modal.window="showCreateModal = false"
+        @close-modal.window="showEditModal = false; showDeleteModal = false"
+        @site-updated.window="showEditModal = false" @site-deleted.window="showDeleteModal = false"
+        @site-status-changed.window="if ($event.detail.previous_online !== $event.detail.is_online) { $dispatch('site-status-updated') }">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-700">
                 <div class="flex items-center justify-between">
@@ -60,7 +61,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-400 text-sm font-medium">Uptime</p>
-                        <p class="text-3xl font-bold text-white mt-1">{{ number_format($this->stats()['uptime'], 2) }}%
+                        <p class="text-3xl font-bold text-white mt-1">{{ number_format($this->stats['uptime'], 2) }}%
                         </p>
                     </div>
                     <div
@@ -135,50 +136,25 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-5">
-                                            @php
-                                                $sslDaysLeft = $site->ssl_expires_at !== null ? (int) now()->diffInDays($site->ssl_expires_at, false) : null;
-                                                $sslClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
-                                                $sslText = '—';
-
-                                                if ($site->ssl_valid === true && $sslDaysLeft !== null) {
-                                                    if ($sslDaysLeft > 30) {
-                                                        $sslClass = 'bg-green-500/10 text-green-400 border border-green-500/20';
-                                                        $sslText = $sslDaysLeft > 365 ? round($sslDaysLeft / 365, 1) . 'y' : $sslDaysLeft . 'd';
-                                                    } elseif ($sslDaysLeft > 14) {
-                                                        $sslClass = 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
-                                                        $sslText = $sslDaysLeft . 'd';
-                                                    } elseif ($sslDaysLeft > 0) {
-                                                        $sslClass = 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
-                                                        $sslText = $sslDaysLeft . 'd';
-                                                    } else {
-                                                        $sslClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
-                                                        $sslText = 'Expired';
-                                                    }
-                                                } elseif ($site->ssl_valid === false && $site->ssl_expires_at !== null) {
-                                                    $sslClass = 'bg-red-500/10 text-red-400 border border-red-500/20';
-                                                    $sslText = 'Expired';
-                                                } elseif (str_starts_with((string) $site->url, 'https://')) {
-                                                    $sslClass = 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
-                                                    $sslText = 'Pending';
-                                                }
-                                            @endphp
+                                            @php $ssl = $site->ssl_badge; @endphp
                                             <span
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $sslClass }}">
-                                                <span
-                                                    class="w-1.5 h-1.5 rounded-full {{ str_contains($sslClass, 'bg-green') ? 'bg-green-400' : (str_contains($sslClass, 'bg-yellow') ? 'bg-yellow-400' : (str_contains($sslClass, 'bg-orange') ? 'bg-orange-400' : (str_contains($sslClass, 'bg-red') ? 'bg-red-400' : 'bg-gray-400'))) }}"></span>
-                                                {{ $sslText }}
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $ssl['class'] }}">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $ssl['dot'] }}"></span>
+                                                {{ $ssl['text'] }}
                                             </span>
-                                        </td>
                                         <td class="px-6 py-5 text-gray-200 font-mono">
                                             {{ number_format($site->uptime, 2) }}%
                                         </td>
                                         <td class="px-8 py-5 text-right">
                                             <div class="flex items-center justify-end gap-3">
-                                                <button wire:click="editSite('{{ $site->id }}')"
-                                                    class="text-gray-400 hover:text-white transition-colors text-sm font-medium cursor-pointer">Edit</button>
+                                                <button
+                                                    class="bg-transparent border-none p-0 text-gray-400 hover:text-white transition-colors text-sm font-medium cursor-pointer"
+                                                    @click="$wire.editSite('{{ $site->id }}'); showEditModal = true">Edit</button>
 
-                                                <button wire:click="confirmDelete('{{ $site->id }}')"
-                                                    class="text-red-400/80 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer">Delete</button>
+                                                <button
+                                                    class="bg-transparent border-none p-0 text-red-400/80 hover:text-red-400 transition-colors text-sm font-medium cursor-pointer"
+                                                    @click="$wire.confirmDelete('{{ $site->id }}'); showDeleteModal = true">Delete</button>
+
                                             </div>
                                         </td>
                                     </tr>
@@ -201,22 +177,24 @@
 
         <!-- Edit Modal -->
         @if($selectedSiteId)
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-black/70" wire:click="closeModals" x-transition.opacity></div>
+            @php $selectedSite = $this->sites->firstWhere('id', $selectedSiteId); @endphp
+            <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="fixed inset-0 bg-black/70" @click="showEditModal = false" x-transition.opacity></div>
                 <div class="relative bg-gray-800 rounded-2xl border border-gray-700 w-full max-w-md p-8" @click.stop
                     x-transition.scale.95>
-                    <livewire:sites.update-site :siteId="$selectedSiteId" :key="'edit-' . $selectedSiteId" lazy />
+                    <livewire:sites.update-site :site="$selectedSite" :key="'edit-' . $selectedSiteId" />
                 </div>
             </div>
         @endif
 
         <!-- Delete Modal -->
         @if($deleteId)
-            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="fixed inset-0 bg-black/70" wire:click="closeModals" x-transition.opacity></div>
+            @php $deleteSite = $this->sites->firstWhere('id', $deleteId); @endphp
+            <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="fixed inset-0 bg-black/70" @click="showDeleteModal = false" x-transition.opacity></div>
                 <div class="relative bg-gray-800 rounded-2xl border border-gray-700 w-full max-w-md p-8" @click.stop
                     x-transition.scale.95>
-                    <livewire:sites.delete-site :siteId="$deleteId" :key="'delete-' . $deleteId" lazy />
+                    <livewire:sites.delete-site :site="$deleteSite" :key="'delete-' . $deleteId" />
                 </div>
             </div>
         @endif
