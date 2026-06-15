@@ -9,9 +9,9 @@
                 </svg>
             </button>
         </div>
-        <p class="text-gray-400 text-sm">Are you sure you want to delete <strong
-                class="text-white">{{ $site->name }}</strong>?</p>
-        <p class="text-red-400 text-sm mt-2">⚠️ This action cannot be undone.</p>
+        <p class="text-gray-400 text-sm">Are you sure you want to delete
+            <strong class="text-white">{{ $site->name }}</strong>?
+        </p>
     </div>
 
     <div class="bg-gray-900/30 border border-gray-700 rounded-lg p-4 mb-6">
@@ -34,7 +34,8 @@
         </button>
         <button type="button" wire:click="delete"
             class="cursor-pointer flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-lg">
-            Delete Site
+            <span wire:loading.remove wire:target="delete">Delete Site</span>
+            <span wire:loading wire:target="delete">Deleting...</span>
         </button>
     </div>
 </div>

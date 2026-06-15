@@ -44,6 +44,7 @@ final class SiteStatusChanged implements ShouldBroadcastNow
             'site_id' => $this->site->id,
             'site_name' => $this->site->name,
             'is_online' => $this->isOnline,
+            'previous_online' => $this->previousOnline,
             'status_code' => $this->statusCode,
             'response_time' => $this->responseTime,
             'last_checked_at' => $this->site->last_checked_at?->toIso8601String(),

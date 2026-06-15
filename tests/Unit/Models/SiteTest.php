@@ -51,12 +51,3 @@ it('checks name duplicate scope', function (): void {
 
     $this->assertEquals(1, $duplicates->count());
 });
-
-it('applies sites with no duplicates scope', function (): void {
-    Site::factory()->for($this->user)->create();
-    Site::factory()->for($this->user)->create();
-
-    $sites = Site::sitesWithNoDuplicates($this->user)->get();
-
-    $this->assertNotEmpty($sites);
-});

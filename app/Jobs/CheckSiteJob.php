@@ -29,7 +29,7 @@ final class CheckSiteJob implements ShouldQueue
 
             $response = Http::timeout(HttpDefaults::HTTP_TIMEOUT)
                 ->connectTimeout(HttpDefaults::CONNECT_TIMEOUT)
-                ->retry(HttpDefaults::RETRY_TIMES, HttpDefaults::RETRY_DELAY)
+                ->retry(HttpDefaults::RETRY_TIMES, HttpDefaults::RETRY_DELAY, throw: false)
                 ->withHeaders([
                     'User-Agent' => HttpDefaults::USER_AGENT,
                     'Accept' => HttpDefaults::ACCEPT,

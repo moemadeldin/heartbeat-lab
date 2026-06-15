@@ -15,7 +15,7 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-slate-200 mb-2">Full Name</label>
-                    <input wire:model="name" type="text"
+                    <input wire:model.defer="name" type="text"
                         class="block w-full rounded-lg bg-slate-900/50 border border-slate-600 text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-500"
                         placeholder="John Doe">
                     @error('name') <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span> @enderror
@@ -23,7 +23,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-200 mb-2">Email Address</label>
-                    <input wire:model="email" type="email"
+                    <input wire:model.defer="email" type="email"
                         class="block w-full rounded-lg bg-slate-900/50 border border-slate-600 text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-500"
                         placeholder="you@example.com">
                     @error('email') <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span> @enderror
@@ -31,7 +31,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-200 mb-2">Password</label>
-                    <input wire:model="password" type="password"
+                    <input wire:model.defer="password" type="password"
                         class="block w-full rounded-lg bg-slate-900/50 border border-slate-600 text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-500"
                         placeholder="••••••••">
                     @error('password') <span class="text-red-400 text-sm mt-1 block">{{ $message }}</span> @enderror
@@ -39,7 +39,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-slate-200 mb-2">Confirm Password</label>
-                    <input wire:model="password_confirmation" type="password"
+                    <input wire:model.defer="password_confirmation" type="password"
                         class="block w-full rounded-lg bg-slate-900/50 border border-slate-600 text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-slate-500"
                         placeholder="••••••••">
                 </div>

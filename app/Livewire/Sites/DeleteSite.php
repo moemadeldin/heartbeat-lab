@@ -6,22 +6,17 @@ namespace App\Livewire\Sites;
 
 use App\Actions\Sites\DeleteSiteAction;
 use App\Models\Site;
-use App\Models\User;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Livewire\Component;
 
 final class DeleteSite extends Component
 {
     public Site $site;
 
-    public function mount(?string $siteId): void
+    public function mount(Site $site): void
     {
-        /** @var User $user */
-        $user = Auth::user();
-        $this->site = Site::query()
-            ->userSites($user)
-            ->findOrFail($siteId);
+        abort_if($site->user_id !== Auth::id(), Response::HTTP_FORBIDDEN);
     }
 
     public function delete(DeleteSiteAction $action): void
@@ -33,8 +28,14 @@ final class DeleteSite extends Component
         $this->dispatch('close-modal');
     }
 
-    public function render(): View
+    public function placeholder(): string
     {
-        return view('livewire.sites.delete-site');
+        return <<<'HTML'
+        <div class="animate-pulse space-y-4">
+            <div class="h-6 bg-gray-700 rounded w-1/3"></div>
+            <div class="h-10 bg-gray-700 rounded"></div>
+            <div class="h-10 bg-gray-700 rounded"></div>
+        </div>
+        HTML;
     }
 }

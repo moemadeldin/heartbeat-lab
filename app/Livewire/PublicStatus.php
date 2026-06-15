@@ -14,13 +14,14 @@ final class PublicStatus extends Component
 {
     use NormalizeURL;
 
-    #[Validate(['required', 'string', 'max:255'])]
+    #[Validate(['required', 'string', 'url'])]
     public string $url = '';
 
     public function search(): void
     {
-        $this->url = $this->normalize($this->url);
         $this->validate();
+
+        $this->url = $this->normalize($this->url);
 
         $this->redirectRoute('public.status.show', ['url' => $this->url]);
     }

@@ -7,6 +7,7 @@ namespace App\Models;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -86,6 +87,76 @@ final class Site extends Model
             ->distinct()
             ->with('user')
             ->orderBy('created_at');
+    }
+
+    /**
+     * @return Attribute<array{
+     *     class: string,
+     *     dot: string,
+     *     text: string
+     * }, never>
+     */
+    protected function sslBadge(): Attribute
+    {
+        return Attribute::make(
+            get: function (): array {
+                $daysLeft = $this->ssl_expires_at !== null
+                    ? (int) now()->diffInDays($this->ssl_expires_at)
+                    : null;
+
+                if ($this->ssl_valid === true && $daysLeft !== null) {
+                    return match (true) {
+                        $daysLeft > 30 => [
+                            'class' => 'bg-green-500/10 text-green-400 border border-green-500/20',
+                            'dot' => 'bg-green-400',
+                            'text' => $daysLeft > 365
+                                ? round($daysLeft / 365, 1).'y'
+                                : $daysLeft.'d',
+                        ],
+
+                        $daysLeft > 14 => [
+                            'class' => 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+                            'dot' => 'bg-yellow-400',
+                            'text' => $daysLeft.'d',
+                        ],
+
+                        $daysLeft > 0 => [
+                            'class' => 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+                            'dot' => 'bg-orange-400',
+                            'text' => $daysLeft.'d',
+                        ],
+
+                        default => [
+                            'class' => 'bg-red-500/10 text-red-400 border border-red-500/20',
+                            'dot' => 'bg-red-400',
+                            'text' => 'Expired',
+                        ],
+                    };
+                }
+
+                if ($this->ssl_valid === false) {
+                    return [
+                        'class' => 'bg-red-500/10 text-red-400 border border-red-500/20',
+                        'dot' => 'bg-red-400',
+                        'text' => 'Expired',
+                    ];
+                }
+
+                if (str_starts_with((string) $this->url, 'https://')) {
+                    return [
+                        'class' => 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
+                        'dot' => 'bg-gray-400',
+                        'text' => 'Pending',
+                    ];
+                }
+
+                return [
+                    'class' => 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
+                    'dot' => 'bg-gray-400',
+                    'text' => '—',
+                ];
+            },
+        );
     }
 
     /**

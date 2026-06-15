@@ -14,13 +14,13 @@ beforeEach(function (): void {
 
 it('renders the update site form', function (): void {
     Livewire::actingAs($this->user)
-        ->test(UpdateSite::class, ['siteId' => $this->site->id])
+        ->test(UpdateSite::class, ['site' => $this->site])
         ->assertStatus(200);
 });
 
 it('updates a site', function (): void {
     Livewire::actingAs($this->user)
-        ->test(UpdateSite::class, ['siteId' => $this->site->id])
+        ->test(UpdateSite::class, ['site' => $this->site])
         ->set('name', 'Updated Site Name')
         ->call('update')
         ->assertDispatched('site-updated')
@@ -32,7 +32,7 @@ it('updates a site', function (): void {
 
 it('validates name is required', function (): void {
     Livewire::actingAs($this->user)
-        ->test(UpdateSite::class, ['siteId' => $this->site->id])
+        ->test(UpdateSite::class, ['site' => $this->site])
         ->set('name', '')
         ->call('update')
         ->assertHasErrors(['name' => 'required']);
@@ -42,7 +42,7 @@ it('fails to update site if name already exists', function (): void {
     Site::factory()->create(['user_id' => $this->user->id, 'name' => 'Existing Site']);
 
     Livewire::actingAs($this->user)
-        ->test(UpdateSite::class, ['siteId' => $this->site->id])
+        ->test(UpdateSite::class, ['site' => $this->site])
         ->set('name', 'Existing Site')
         ->call('update')
         ->assertHasErrors(['name' => 'You are already monitoring a site with this name.']);
