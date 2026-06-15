@@ -23,7 +23,7 @@ final class CheckPublicStatusJob implements ShouldQueue
         private readonly string $token,
     ) {}
 
-    public function handle(): void
+    public function handle(SslCertificateService $ssl): void
     {
         $startTime = microtime(true);
 
@@ -53,7 +53,7 @@ final class CheckPublicStatusJob implements ShouldQueue
             $error = $exception->getMessage();
         }
 
-        $sslData = resolve(SslCertificateService::class)->check($this->url);
+        $sslData = $ssl->check($this->url);
 
         $result = [
             'is_online' => $isOnline,

@@ -22,9 +22,12 @@ final class CheckSiteJob implements ShouldQueue
 
     public function handle(): void
     {
-        try {
-            $previousOnline = $this->site->is_online ?? false;
+        $previousOnline = $this->site->is_online ?? false;
+        $isOnline = false;
+        $statusCode = null;
+        $responseTime = null;
 
+        try {
             $startTime = microtime(true);
 
             $response = Http::timeout(HttpDefaults::HTTP_TIMEOUT)
@@ -37,71 +40,51 @@ final class CheckSiteJob implements ShouldQueue
                 ->get($this->site->url);
 
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
-
             $isOnline = $response->successful() && $response->status() === 200;
-
-            $this->site->update([
-                'is_online' => $isOnline,
-                'status_code' => $response->status(),
-                'response_time' => $responseTime,
-                'last_checked_at' => now(),
-            ]);
-
-            $uptime = $this->calculateAndUpdateUptime($isOnline);
-
-            Redis::setex(
-                sprintf('site:%s:status', $this->site->id),
-                120,
-                json_encode([
-                    'is_online' => $isOnline,
-                    'uptime' => $uptime,
-                    'status_code' => $response->status(),
-                    'response_time' => $responseTime,
-                    'last_checked_at' => now()->toIso8601String(),
-                ])
-            );
+            $statusCode = $response->status();
 
             Log::info('Site checked', [
                 'site_id' => $this->site->id,
                 'url' => $this->site->url,
-                'status_code' => $response->status(),
+                'status_code' => $statusCode,
                 'is_online' => $isOnline,
                 'response_time' => $responseTime,
             ]);
-
-            $this->dispatchStatusChangedEvent($isOnline, $response->status(), $responseTime, $previousOnline);
-
-        } catch (Exception $exception) {
-            $previousOnline = $this->site->is_online ?? false;
-            $this->site->update([
-                'is_online' => false,
-                'status_code' => null,
-                'response_time' => null,
-                'last_checked_at' => now(),
+        } catch (ConnectionException) {
+            Log::error('Site check failed: connection error', [
+                'site_id' => $this->site->id,
+                'url' => $this->site->url,
             ]);
-
-            $uptime = $this->calculateAndUpdateUptime(false);
-
-            Redis::setex(
-                sprintf('site:%s:status', $this->site->id),
-                120,
-                json_encode([
-                    'is_online' => false,
-                    'uptime' => $uptime,
-                    'status_code' => null,
-                    'response_time' => null,
-                    'last_checked_at' => now()->toIso8601String(),
-                ])
-            );
-
+        } catch (Exception $exception) {
             Log::error('Site check failed', [
                 'site_id' => $this->site->id,
                 'url' => $this->site->url,
                 'error' => $exception->getMessage(),
             ]);
-
-            $this->dispatchStatusChangedEvent(false, null, null, $previousOnline);
         }
+
+        $this->site->update([
+            'is_online' => $isOnline,
+            'status_code' => $statusCode,
+            'response_time' => $responseTime,
+            'last_checked_at' => now(),
+        ]);
+
+        $uptime = $this->calculateAndUpdateUptime($isOnline);
+
+        Redis::setex(
+            sprintf('site:%s:status', $this->site->id),
+            120,
+            json_encode([
+                'is_online' => $isOnline,
+                'uptime' => $uptime,
+                'status_code' => $statusCode,
+                'response_time' => $responseTime,
+                'last_checked_at' => now()->toIso8601String(),
+            ]),
+        );
+
+        $this->dispatchStatusChangedEvent($isOnline, $statusCode, $responseTime, $previousOnline);
     }
 
     private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime, bool $previousOnline = false): void
