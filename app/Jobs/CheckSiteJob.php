@@ -50,11 +50,6 @@ final class CheckSiteJob implements ShouldQueue
                 'is_online' => $isOnline,
                 'response_time' => $responseTime,
             ]);
-        } catch (ConnectionException) {
-            Log::error('Site check failed: connection error', [
-                'site_id' => $this->site->id,
-                'url' => $this->site->url,
-            ]);
         } catch (Exception $exception) {
             Log::error('Site check failed', [
                 'site_id' => $this->site->id,
@@ -89,6 +84,10 @@ final class CheckSiteJob implements ShouldQueue
 
     private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime, bool $previousOnline = false): void
     {
+        if ($this->site->last_checked_at === null) {
+            return;
+        }
+
         event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime, $previousOnline));
     }
 
