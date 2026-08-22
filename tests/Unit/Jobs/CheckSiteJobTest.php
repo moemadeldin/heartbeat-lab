@@ -6,7 +6,6 @@ use App\Jobs\CheckSiteJob;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -24,7 +23,7 @@ it('updates site status when online', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
@@ -38,7 +37,7 @@ it('updates site status when offline', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
@@ -54,7 +53,7 @@ it('handles connection error', function (): void {
     });
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
@@ -73,7 +72,7 @@ it('logs successful check', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     Log::shouldHaveReceived('info')->with('Site checked', Mockery::any());
     Log::shouldHaveReceived('info')->with('Uptime calculated', Mockery::any());
@@ -85,7 +84,7 @@ it('marks site offline when response successful but not 200', function (): void 
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
@@ -99,7 +98,7 @@ it('marks site offline when response redirect', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
@@ -117,7 +116,7 @@ it('updates site status and calculates uptime', function (): void {
     Log::spy();
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle();
 
     $this->site->refresh();
 
