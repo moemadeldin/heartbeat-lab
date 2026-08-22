@@ -39,7 +39,7 @@ it('validates url must be valid', function (): void {
         ->set('name', 'My Site')
         ->set('url', 'not-a-url')
         ->call('store')
-        ->assertHasErrors(['url' => 'url']);
+        ->assertHasErrors(['url' => 'url_or_domain']);
 });
 
 it('creates a site successfully', function (): void {

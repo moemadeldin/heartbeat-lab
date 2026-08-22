@@ -13,10 +13,11 @@
 
     <main class="max-w-7xl mx-auto py-12 px-8"
         x-data="{ showCreateModal: false, showEditModal: false, showDeleteModal: false }"
-        @site-created.window="showCreateModal = false" @close-create-modal.window="showCreateModal = false"
+        @site-created.window="showCreateModal = false; $wire.refreshSitesAndCloseModals()" @close-create-modal.window="showCreateModal = false"
         @close-modal.window="showEditModal = false; showDeleteModal = false"
-        @site-updated.window="showEditModal = false" @site-deleted.window="showDeleteModal = false"
-        @site-status-changed.window="if ($event.detail.previous_online !== $event.detail.is_online) { $dispatch('site-status-updated') }">
+        @site-updated.window="showEditModal = false; $wire.refreshSitesAndCloseModals()" @site-deleted.window="showDeleteModal = false; $wire.refreshSitesAndCloseModals()"
+        @site-status-changed.window="$wire.refreshSites()"
+        wire:poll.15s="refreshSites">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-700">
                 <div class="flex items-center justify-between">
@@ -128,11 +129,12 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-5">
+                                            @php $status = $site->status_badge; @endphp
                                             <span
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $site->is_online ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20' }}">
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold {{ $status['class'] }}">
                                                 <span
-                                                    class="w-1.5 h-1.5 rounded-full {{ $site->is_online ? 'bg-green-400 animate-pulse' : 'bg-red-400' }}"></span>
-                                                {{ $site->is_online ? 'ONLINE' : 'OFFLINE' }}
+                                                    class="w-1.5 h-1.5 rounded-full {{ $status['dot'] }}"></span>
+                                                {{ $status['text'] }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-5">

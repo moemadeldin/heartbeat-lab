@@ -19,16 +19,16 @@
     </script>
     <div x-data="{ 
         show: false, 
-        name: '',
+        message: '',
         init() {
             window.addEventListener('user-registered', (event) => {
-                this.name = event.detail.name;
+                this.message = event.detail.message;
                 this.show = true;
                 setTimeout(() => this.show = false, 5000);
             });
         }
-    }" x-show="show" x-transition class="fixed bottom-5 right-5 bg-blue-600 text-white p-4 rounded shadow-lg z-50">
-        Welcome, <span x-text="name"></span>!
+    }" x-show="show" x-transition class="fixed top-5 right-5 bg-blue-600 text-white p-4 rounded shadow-lg z-50">
+        <span x-text="message"></span>
     </div>
 
     {{ $slot }}

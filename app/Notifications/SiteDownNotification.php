@@ -41,7 +41,7 @@ final class SiteDownNotification extends Notification implements ShouldQueue
                 'isOnline' => false,
                 'statusText' => $statusText,
                 'responseTime' => $this->responseTime,
-                'checkedAt' => $this->site->last_checked_at,
+                'checkedAt' => now(),
                 'dashboardUrl' => url('/dashboard'),
             ]);
     }

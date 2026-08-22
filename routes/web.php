@@ -31,7 +31,8 @@ Route::prefix('auth')
     ->middleware(['guest'])
     ->group(function (): void {
         Route::get('/register', Register::class)->name('register');
-        Route::get('/login', Login::class)->name('login');
+        Route::get('/login', Login::class)->name('login')
+            ->middleware('throttle:login');
     });
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');

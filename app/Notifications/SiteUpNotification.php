@@ -37,7 +37,7 @@ final class SiteUpNotification extends Notification implements ShouldQueue
                 'isOnline' => true,
                 'statusText' => 'HTTP '.$this->statusCode,
                 'responseTime' => $this->responseTime,
-                'checkedAt' => $this->site->last_checked_at,
+                'checkedAt' => now(),
                 'dashboardUrl' => url('/dashboard'),
             ]);
     }

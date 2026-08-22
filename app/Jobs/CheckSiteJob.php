@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\SiteStatus;
 use App\Events\SiteStatusChanged;
+use App\Interfaces\UrlValidator;
 use App\Models\Site;
 use App\Utilities\HttpDefaults;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -20,9 +23,12 @@ final class CheckSiteJob implements ShouldQueue
 
     public function __construct(private Site $site) {}
 
-    public function handle(): void
+    public function handle(UrlValidator $validator): void
     {
-        $previousOnline = $this->site->is_online ?? false;
+        $validator->validateForMonitoring($this->site->url);
+
+        $previousStatus = $this->site->status ?? SiteStatus::Checking;
+        $wasCheckedBefore = $this->site->checks()->exists();
         $isOnline = false;
         $statusCode = null;
         $responseTime = null;
@@ -40,7 +46,7 @@ final class CheckSiteJob implements ShouldQueue
                 ->get($this->site->url);
 
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
-            $isOnline = $response->successful() && $response->status() === 200;
+            $isOnline = $response->successful();
             $statusCode = $response->status();
 
             Log::info('Site checked', [
@@ -50,11 +56,6 @@ final class CheckSiteJob implements ShouldQueue
                 'is_online' => $isOnline,
                 'response_time' => $responseTime,
             ]);
-        } catch (ConnectionException) {
-            Log::error('Site check failed: connection error', [
-                'site_id' => $this->site->id,
-                'url' => $this->site->url,
-            ]);
         } catch (Exception $exception) {
             Log::error('Site check failed', [
                 'site_id' => $this->site->id,
@@ -63,20 +64,23 @@ final class CheckSiteJob implements ShouldQueue
             ]);
         }
 
-        $this->site->update([
-            'is_online' => $isOnline,
-            'status_code' => $statusCode,
-            'response_time' => $responseTime,
-            'last_checked_at' => now(),
-        ]);
+        $status = $isOnline ? SiteStatus::Online : SiteStatus::Offline;
+        $uptime = 0.0;
 
-        $uptime = $this->calculateAndUpdateUptime($isOnline);
+        DB::transaction(function () use ($status, $statusCode, $responseTime, &$uptime): void {
+            $this->site->update([
+                'status' => $status,
+            ]);
+
+            $this->persistCheckResult($status, $statusCode, $responseTime);
+            $uptime = $this->calculateAndUpdateUptime();
+        });
 
         Redis::setex(
             sprintf('site:%s:status', $this->site->id),
             120,
             json_encode([
-                'is_online' => $isOnline,
+                'status' => $status->value,
                 'uptime' => $uptime,
                 'status_code' => $statusCode,
                 'response_time' => $responseTime,
@@ -84,41 +88,50 @@ final class CheckSiteJob implements ShouldQueue
             ]),
         );
 
-        $this->dispatchStatusChangedEvent($isOnline, $statusCode, $responseTime, $previousOnline);
-    }
-
-    private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime, bool $previousOnline = false): void
-    {
-        event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime, $previousOnline));
-    }
-
-    private function calculateAndUpdateUptime(bool $isOnline): float
-    {
-        $key = sprintf('site:%s:checks', $this->site->id);
-
-        Redis::rpush($key, $isOnline ? 1 : 0);
-        Redis::ltrim($key, -100, -1);
-
-        /** @var array<string|int> $checks */
-        $checks = Redis::lrange($key, 0, -1);
-        $total = count($checks);
-
-        $uptime = 0.00;
-
-        if ($total > 0) {
-            $onlineCount = array_sum(array_map(fn (string $value): int => (int) $value, $checks));
-
-            $uptime = round(($onlineCount / $total) * 100, 2);
-
-            $this->site->update(['uptime' => $uptime]);
-
-            Log::info('Uptime calculated', [
-                'site_id' => $this->site->id,
-                'uptime' => $uptime,
-                'total_checks' => $total,
-                'online_checks' => $onlineCount,
-            ]);
+        if ($wasCheckedBefore) {
+            event(new SiteStatusChanged($this->site, $status, $statusCode, $responseTime, $previousStatus));
         }
+    }
+
+    private function persistCheckResult(SiteStatus $status, ?int $statusCode, ?float $responseTime): void
+    {
+        DB::table('site_checks')->insert([
+            'site_id' => $this->site->id,
+            'status' => $status->value,
+            'status_code' => $statusCode,
+            'response_time' => $responseTime,
+            'checked_at' => now(),
+        ]);
+
+        DB::table('site_checks')
+            ->where('site_id', $this->site->id)
+            ->where('id', '<', DB::raw("(SELECT id FROM site_checks WHERE site_id = '".$this->site->id."' ORDER BY id DESC LIMIT 1 OFFSET 100)"))
+            ->delete();
+    }
+
+    private function calculateAndUpdateUptime(): float
+    {
+        $checks = DB::table('site_checks')
+            ->where('site_id', $this->site->id)
+            ->orderByDesc('id')
+            ->limit(100)
+            ->pluck('status');
+
+        $total = $checks->count();
+
+        if ($total === 0) {
+            return 0.0;
+        }
+
+        $onlineCount = $checks->filter(fn ($s): bool => $s === SiteStatus::Online->value)->count();
+        $uptime = round(($onlineCount / $total) * 100, 2);
+
+        Log::info('Uptime calculated', [
+            'site_id' => $this->site->id,
+            'uptime' => $uptime,
+            'total_checks' => $total,
+            'online_checks' => $onlineCount,
+        ]);
 
         return $uptime;
     }

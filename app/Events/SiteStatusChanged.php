@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events;
 
+use App\Enums\SiteStatus;
 use App\Models\Site;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -19,10 +20,10 @@ final class SiteStatusChanged implements ShouldBroadcastNow
 
     public function __construct(
         public Site $site,
-        public bool $isOnline,
+        public SiteStatus $status,
         public ?int $statusCode,
         public ?float $responseTime,
-        public bool $previousOnline = false
+        public SiteStatus $previousStatus = SiteStatus::Checking
     ) {}
 
     public function broadcastOn(): array
@@ -43,11 +44,11 @@ final class SiteStatusChanged implements ShouldBroadcastNow
         return [
             'site_id' => $this->site->id,
             'site_name' => $this->site->name,
-            'is_online' => $this->isOnline,
-            'previous_online' => $this->previousOnline,
+            'status' => $this->status->value,
+            'previous_status' => $this->previousStatus->value,
             'status_code' => $this->statusCode,
             'response_time' => $this->responseTime,
-            'last_checked_at' => $this->site->last_checked_at?->toIso8601String(),
+            'checked_at' => now()->toIso8601String(),
         ];
     }
 }

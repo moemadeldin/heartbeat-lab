@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\SiteStatus;
+use App\Interfaces\UrlValidator;
 use App\Jobs\CheckSiteJob;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Factory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -16,6 +18,11 @@ beforeEach(function (): void {
     $this->site = Site::factory()->for($this->user)->create([
         'url' => 'https://example.com',
     ]);
+
+    $mock = Mockery::mock(UrlValidator::class);
+    $mock->shouldReceive('validateForMonitoring')->andReturnNull();
+
+    $this->app->instance(UrlValidator::class, $mock);
 });
 
 it('updates site status when online', function (): void {
@@ -24,12 +31,12 @@ it('updates site status when online', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    $this->assertTrue($this->site->is_online);
-    $this->assertEquals(200, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Online, $this->site->status);
+    $this->assertEquals(200, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('updates site status when offline', function (): void {
@@ -38,12 +45,12 @@ it('updates site status when offline', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
-    $this->assertEquals(500, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
+    $this->assertEquals(500, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('handles connection error', function (): void {
@@ -54,11 +61,11 @@ it('handles connection error', function (): void {
     });
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
 
     Log::shouldHaveReceived('error')
         ->once()
@@ -73,24 +80,24 @@ it('logs successful check', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     Log::shouldHaveReceived('info')->with('Site checked', Mockery::any());
     Log::shouldHaveReceived('info')->with('Uptime calculated', Mockery::any());
 });
 
-it('marks site offline when response successful but not 200', function (): void {
+it('marks site online when response successful with 2xx', function (): void {
     Http::fake([
         '*' => Http::response('', 201),
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
-    $this->assertEquals(201, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Online, $this->site->status);
+    $this->assertEquals(201, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('marks site offline when response redirect', function (): void {
@@ -99,28 +106,27 @@ it('marks site offline when response redirect', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
-    $this->assertEquals(301, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
+    $this->assertEquals(301, $this->site->checks()->latest()->first()->status_code);
 });
+
 it('updates site status and calculates uptime', function (): void {
-    // 1. Mock Redis
-    Redis::shouldReceive('rpush')->once();
-    Redis::shouldReceive('ltrim')->once();
-    Redis::shouldReceive('lrange')->once()->andReturn([1, 1, 0]); // Simulate 2 up, 1 down
     Redis::shouldReceive('setex')->once();
 
     Http::fake(['*' => Http::response('', 200)]);
     Log::spy();
 
     $job = new CheckSiteJob($this->site);
-    $job->handle(new Factory);
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
-    // 2/3 = 66.67%
-    $this->assertEquals(66.67, $this->site->uptime);
+    $this->assertEquals(100.0, $this->site->uptime);
+
+    $checksInDb = DB::table('site_checks')->where('site_id', $this->site->id)->count();
+    $this->assertEquals(1, $checksInDb);
 });

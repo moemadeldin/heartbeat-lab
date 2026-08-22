@@ -19,6 +19,6 @@ final readonly class HandleNewRegistration implements ShouldQueue
 
     public function handle(UserRegistered $event): void
     {
-        dispatch(new SendWelcomeEmailJob($event->user->email));
+        dispatch(new SendWelcomeEmailJob($event->user->email, $event->user->name));
     }
 }

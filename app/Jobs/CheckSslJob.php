@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Events\SiteStatusChanged;
 use App\Models\Site;
 use App\Notifications\SslCertExpiringNotification;
 use App\Services\SslCertificateService;
@@ -50,13 +49,6 @@ final class CheckSslJob implements ShouldQueue
                 $this->checkExpiryThreshold($result['ssl_expires_at']);
             }
 
-            event(new SiteStatusChanged(
-                $this->site,
-                $this->site->is_online ?? false,
-                $this->site->status_code,
-                $this->site->response_time,
-            ));
-
             Log::info('SSL certificate checked', [
                 'site_id' => $this->site->id,
                 'url' => $url,
@@ -98,7 +90,7 @@ final class CheckSslJob implements ShouldQueue
     private function handleError(Exception $exception, string $url): void
     {
         $this->site->update([
-            'ssl_valid' => false,
+            'ssl_valid' => null,
             'ssl_expires_at' => null,
             'ssl_issuer' => null,
         ]);

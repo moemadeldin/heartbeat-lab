@@ -19,7 +19,7 @@ final class CreateSite extends Component
     #[Validate(['required', 'string', 'max:255'])]
     public string $name = '';
 
-    #[Validate(['required', 'string', 'url'])]
+    #[Validate(['required', 'string', 'url_or_domain'])]
     public string $url = '';
 
     public function store(CreateSiteAction $action): void

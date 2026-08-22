@@ -10,11 +10,11 @@ final readonly class HttpDefaults
 
     public const string ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
 
-    public const int HTTP_TIMEOUT = 10;
+    public const int HTTP_TIMEOUT = 8;
 
-    public const int CONNECT_TIMEOUT = 5;
+    public const int CONNECT_TIMEOUT = 3;
 
-    public const int RETRY_TIMES = 3;
+    public const int RETRY_TIMES = 1;
 
-    public const int RETRY_DELAY = 100;
+    public const int RETRY_DELAY = 200;
 }

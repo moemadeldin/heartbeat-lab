@@ -40,8 +40,8 @@ it('broadcasts with correct data', function (): void {
 
     $data = $event->broadcastWith();
 
-    expect($data)->toHaveKey('name', 'Jane Smith');
     expect($data)->toHaveKey('message', 'A new lab member has arrived!');
+    expect($data)->not->toHaveKey('name');
 });
 
 it('should broadcast now', function (): void {

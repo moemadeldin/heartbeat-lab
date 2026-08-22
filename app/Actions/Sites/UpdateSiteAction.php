@@ -17,6 +17,7 @@ final readonly class UpdateSiteAction
     public function execute(User $user, Site $site, array $data): Site
     {
         throw_if(Site::whereNameDuplicate($user, $data['name'])
+            ->where('id', '!=', $site->id)
             ->exists(), DuplicateSiteException::class, 'name'
         );
 

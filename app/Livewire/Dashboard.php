@@ -8,7 +8,7 @@ use App\Models\Site;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -31,10 +31,14 @@ final class Dashboard extends Component
     public function refreshSites(): void
     {
         unset($this->sites, $this->stats);
+    }
+
+    #[On(['site-created', 'site-updated', 'site-deleted'])]
+    public function refreshSitesAndCloseModals(): void
+    {
+        unset($this->sites, $this->stats);
         $this->selectedSiteId = null;
         $this->deleteId = null;
-
-        Cache::store('redis')->forget($this->statsCacheKey());
     }
 
     public function editSite(string $siteId): void
@@ -63,7 +67,7 @@ final class Dashboard extends Component
         return Site::query()
             ->userSites($this->authUser())
             ->orderBy('created_at', 'asc')
-            ->select(['id', 'user_id', 'name', 'url', 'is_online', 'uptime', 'ssl_valid', 'ssl_expires_at', 'ssl_issuer'])
+            ->select(['id', 'user_id', 'name', 'url', 'status', 'ssl_valid', 'ssl_expires_at', 'ssl_issuer'])
             ->get();
     }
 
@@ -78,35 +82,31 @@ final class Dashboard extends Component
     #[Computed]
     public function stats(): array
     {
-        $cached = Cache::store('redis')->get($this->statsCacheKey());
+        $userId = $this->authUser()->id;
 
-        if ($cached !== null) {
-            /** @var array{total: int, online: int, offline: int, uptime: float} $cached */
-            return $cached;
-        }
+        $stats = DB::table('sites')
+            ->where('user_id', $userId)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) as online")
+            ->selectRaw("SUM(CASE WHEN status = 'offline' THEN 1 ELSE 0 END) as offline")
+            ->first();
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $sites */
-        $sites = $this->sites;
+        $uptime = DB::table('site_checks')
+            ->join('sites', 'sites.id', '=', 'site_checks.site_id')
+            ->where('sites.user_id', $userId)
+            ->selectRaw("COALESCE(AVG(CASE WHEN site_checks.status = 'online' THEN 100.0 ELSE 0 END), 0) as uptime")
+            ->value('uptime');
 
-        $stats = [
-            'total' => $sites->count(),
-            'online' => $sites->where('is_online', true)->count(),
-            'offline' => $sites->where('is_online', false)->count(),
-            'uptime' => $sites->avg('uptime') ?? 0.00,
+        return [
+            'total' => (int) $stats->total,
+            'online' => (int) $stats->online,
+            'offline' => (int) $stats->offline,
+            'uptime' => round((float) $uptime, 2),
         ];
-
-        Cache::store('redis')->set($this->statsCacheKey(), $stats, 60);
-
-        return $stats;
     }
 
     private function authUser(): User
     {
         return Auth::user();
-    }
-
-    private function statsCacheKey(): string
-    {
-        return sprintf('user:%s:dashboard:stats', Auth::id());
     }
 }
