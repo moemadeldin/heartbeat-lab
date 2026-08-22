@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\SiteStatus;
 use App\Models\Site;
 use App\Models\User;
 
@@ -15,11 +16,9 @@ it('belongs to user', function (): void {
 });
 
 it('has correct casts', function (): void {
-    $this->site->is_online = true;
-    $this->assertIsBool($this->site->is_online);
-
-    $this->site->status_code = 200;
-    $this->assertIsInt($this->site->status_code);
+    $this->site->status = SiteStatus::Online;
+    $this->assertInstanceOf(SiteStatus::class, $this->site->status);
+    $this->assertEquals(SiteStatus::Online, $this->site->status);
 });
 
 it('has uuid id', function (): void {

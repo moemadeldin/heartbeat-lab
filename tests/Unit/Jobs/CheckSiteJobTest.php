@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\SiteStatus;
 use App\Interfaces\UrlValidator;
 use App\Jobs\CheckSiteJob;
 use App\Models\Site;
@@ -34,8 +35,8 @@ it('updates site status when online', function (): void {
 
     $this->site->refresh();
 
-    $this->assertTrue($this->site->is_online);
-    $this->assertEquals(200, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Online, $this->site->status);
+    $this->assertEquals(200, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('updates site status when offline', function (): void {
@@ -48,8 +49,8 @@ it('updates site status when offline', function (): void {
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
-    $this->assertEquals(500, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
+    $this->assertEquals(500, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('handles connection error', function (): void {
@@ -64,7 +65,7 @@ it('handles connection error', function (): void {
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
 
     Log::shouldHaveReceived('error')
         ->once()
@@ -95,8 +96,8 @@ it('marks site online when response successful with 2xx', function (): void {
 
     $this->site->refresh();
 
-    $this->assertTrue($this->site->is_online);
-    $this->assertEquals(201, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Online, $this->site->status);
+    $this->assertEquals(201, $this->site->checks()->latest()->first()->status_code);
 });
 
 it('marks site offline when response redirect', function (): void {
@@ -109,9 +110,10 @@ it('marks site offline when response redirect', function (): void {
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
-    $this->assertEquals(301, $this->site->status_code);
+    $this->assertEquals(SiteStatus::Offline, $this->site->status);
+    $this->assertEquals(301, $this->site->checks()->latest()->first()->status_code);
 });
+
 it('updates site status and calculates uptime', function (): void {
     Redis::shouldReceive('setex')->once();
 
@@ -123,7 +125,7 @@ it('updates site status and calculates uptime', function (): void {
 
     $this->site->refresh();
 
-    $this->assertEquals(100, $this->site->uptime);
+    $this->assertEquals(100.0, $this->site->uptime);
 
     $checksInDb = DB::table('site_checks')->where('site_id', $this->site->id)->count();
     $this->assertEquals(1, $checksInDb);

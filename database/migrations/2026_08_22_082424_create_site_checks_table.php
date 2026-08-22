@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('site_checks', function (Blueprint $table): void {
             $table->id();
             $table->foreignUuid('site_id')->index()->constrained()->cascadeOnDelete();
-            $table->boolean('is_online');
+            $table->string('status')->index();
             $table->integer('status_code')->nullable();
             $table->decimal('response_time', 8, 2)->nullable();
             $table->timestamp('checked_at');

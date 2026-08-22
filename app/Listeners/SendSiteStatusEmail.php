@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Enums\SiteStatus;
 use App\Events\SiteStatusChanged;
 use App\Notifications\SiteDownNotification;
 use App\Notifications\SiteUpNotification;
@@ -14,7 +15,7 @@ final class SendSiteStatusEmail implements ShouldQueue
 {
     public function handle(SiteStatusChanged $event): void
     {
-        if ($event->previousOnline === $event->isOnline) {
+        if ($event->previousStatus === $event->status) {
             return;
         }
 
@@ -24,7 +25,7 @@ final class SendSiteStatusEmail implements ShouldQueue
             return;
         }
 
-        if ($event->isOnline) {
+        if ($event->status === SiteStatus::Online) {
             $user->notify(new SiteUpNotification(
                 site: $event->site,
                 statusCode: $event->statusCode ?? Response::HTTP_OK,

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\SiteStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -21,11 +22,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('name');
             $table->string('url');
-            $table->boolean('is_online')->index()->nullable();
-            $table->decimal('uptime', 5, 2)->default(0.00);
-            $table->timestamp('last_checked_at')->index()->nullable();
-            $table->integer('status_code')->nullable();
-            $table->decimal('response_time', 8, 2)->nullable();
+            $table->string('status')->index()->default(SiteStatus::Checking->value);
             $table->timestamp('ssl_expires_at')->nullable();
             $table->string('ssl_issuer', 255)->nullable();
             $table->boolean('ssl_valid')->nullable();

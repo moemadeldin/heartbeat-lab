@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\SiteStatus;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,20 +15,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property string $id
  * @property string $user_id
  * @property string $name
  * @property string $url
- * @property bool $is_online
- * @property int|null $status_code
- * @property float $uptime
- * @property float|null $response_time
+ * @property SiteStatus $status
  * @property Carbon|null $ssl_expires_at
  * @property string|null $ssl_issuer
  * @property bool|null $ssl_valid
- * @property Carbon|null $last_checked_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -92,7 +90,7 @@ final class Site extends Model
     #[Scope()]
     protected function sitesWithNoDuplicates(Builder $query): Builder
     {
-        return $query->select(['user_id', 'id', 'name', 'url', 'is_online', 'uptime', 'created_at'])
+        return $query->select(['user_id', 'id', 'name', 'url', 'status', 'created_at'])
             ->distinct()
             ->with('user')
             ->orderBy('created_at');
@@ -184,8 +182,60 @@ final class Site extends Model
                 return [
                     'class' => 'bg-gray-500/10 text-gray-400 border border-gray-500/20',
                     'dot' => 'bg-gray-400',
-                    'text' => '—',
+                    'text' => '&mdash;',
                 ];
+            },
+        );
+    }
+
+    /**
+     * @return Attribute<float, never>
+     */
+    protected function uptime(): Attribute
+    {
+        return Attribute::make(
+            get: function (): float {
+                $checks = DB::table('site_checks')
+                    ->where('site_id', $this->id)
+                    ->orderByDesc('id')
+                    ->limit(100)
+                    ->pluck('status');
+
+                $total = $checks->count();
+
+                if ($total === 0) {
+                    return 0.0;
+                }
+
+                $onlineCount = $checks->filter(fn ($s): bool => $s === SiteStatus::Online->value)->count();
+
+                return round(($onlineCount / $total) * 100, 2);
+            },
+        );
+    }
+
+    /**
+     * @return Attribute<array{class: string, dot: string, text: string}, never>
+     */
+    protected function statusBadge(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): array => match ($this->status) {
+                SiteStatus::Online => [
+                    'class' => 'bg-green-500/10 text-green-400 border border-green-500/20',
+                    'dot' => 'bg-green-400 animate-pulse',
+                    'text' => 'ONLINE',
+                ],
+                SiteStatus::Offline => [
+                    'class' => 'bg-red-500/10 text-red-400 border border-red-500/20',
+                    'dot' => 'bg-red-400',
+                    'text' => 'OFFLINE',
+                ],
+                SiteStatus::Checking => [
+                    'class' => 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+                    'dot' => 'bg-yellow-400 animate-pulse',
+                    'text' => 'CHECKING',
+                ],
             },
         );
     }
@@ -201,14 +251,12 @@ final class Site extends Model
             'user_id' => 'string',
             'name' => 'string',
             'url' => 'string',
-            'is_online' => 'boolean',
-            'status_code' => 'integer',
-            'uptime' => 'float',
-            'response_time' => 'float',
+            'status' => SiteStatus::class,
             'ssl_expires_at' => 'datetime',
             'ssl_issuer' => 'string',
             'ssl_valid' => 'boolean',
-            'last_checked_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 }

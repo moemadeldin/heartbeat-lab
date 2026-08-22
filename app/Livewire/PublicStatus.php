@@ -14,7 +14,7 @@ final class PublicStatus extends Component
 {
     use NormalizeURL;
 
-    #[Validate(['required', 'string', 'url'])]
+    #[Validate(['required', 'string', 'url_or_domain'])]
     public string $url = '';
 
     public function search(): void

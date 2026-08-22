@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\SiteStatus;
 use App\Filament\Admin\Resources\SiteResource\Pages\CreateSite;
 use App\Filament\Admin\Resources\SiteResource\Pages\EditSite;
 use App\Filament\Admin\Resources\SiteResource\Pages\ListSites;
@@ -11,30 +12,25 @@ use App\Models\Site;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource; // Important for v4/v5 compatibility
+use Filament\Forms\Components\ToggleButtons;
+use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 final class SiteResource extends Resource
 {
     protected static ?string $model = Site::class;
 
-    // Fixed Heroicon access for v5
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;
 
     protected static ?string $navigationLabel = 'Sites';
 
     protected static ?int $navigationSort = 2;
 
-    /**
-     * To fix the "Not compatible" error, we must use the Schema typehint
-     * that the base Resource class expects in this version.
-     */
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -51,8 +47,9 @@ final class SiteResource extends Resource
                     ->maxLength(255)
                     ->rules(['url_or_domain'])
                     ->placeholder('example.com or https://example.com'),
-                Toggle::make('is_online')
-                    ->label('Online')
+                ToggleButtons::make('status')
+                    ->label('Status')
+                    ->options(SiteStatus::class)
                     ->disabled(),
             ]);
     }
@@ -67,27 +64,23 @@ final class SiteResource extends Resource
                 TextColumn::make('url')
                     ->searchable()
                     ->url(fn (Site $record): string => $record->url),
-                IconColumn::make('is_online')
-                    ->boolean()
-                    ->label('Online'),
-                TextColumn::make('status_code')
-                    ->label('Status'),
-                TextColumn::make('uptime')
-                    ->suffix('%')
-                    ->numeric(decimalPlaces: 2),
-                TextColumn::make('response_time')
-                    ->suffix('ms')
-                    ->numeric(decimalPlaces: 0),
-                TextColumn::make('last_checked_at')
-                    ->dateTime()
-                    ->sortable(),
+                BadgeColumn::make('status')
+                    ->label('Status')
+                    ->colors([
+                        'success' => SiteStatus::Online,
+                        'danger' => SiteStatus::Offline,
+                        'warning' => SiteStatus::Checking,
+                    ])
+                    ->formatStateUsing(fn (SiteStatus $state): string => $state->label()),
             ])
             ->filters([
-                TernaryFilter::make('is_online')
-                    ->label('Online status')
-                    ->placeholder('All sites')
-                    ->trueLabel('Online')
-                    ->falseLabel('Offline'),
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        SiteStatus::Online->value => SiteStatus::Online->label(),
+                        SiteStatus::Offline->value => SiteStatus::Offline->label(),
+                        SiteStatus::Checking->value => SiteStatus::Checking->label(),
+                    ]),
             ]);
     }
 
