@@ -7,6 +7,7 @@ use App\Jobs\CheckSiteJob;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -84,7 +85,7 @@ it('logs successful check', function (): void {
     Log::shouldHaveReceived('info')->with('Uptime calculated', Mockery::any());
 });
 
-it('marks site offline when response successful but not 200', function (): void {
+it('marks site online when response successful with 2xx', function (): void {
     Http::fake([
         '*' => Http::response('', 201),
     ]);
@@ -94,7 +95,7 @@ it('marks site offline when response successful but not 200', function (): void 
 
     $this->site->refresh();
 
-    $this->assertFalse($this->site->is_online);
+    $this->assertTrue($this->site->is_online);
     $this->assertEquals(201, $this->site->status_code);
 });
 
@@ -112,10 +113,6 @@ it('marks site offline when response redirect', function (): void {
     $this->assertEquals(301, $this->site->status_code);
 });
 it('updates site status and calculates uptime', function (): void {
-    // 1. Mock Redis
-    Redis::shouldReceive('rpush')->once();
-    Redis::shouldReceive('ltrim')->once();
-    Redis::shouldReceive('lrange')->once()->andReturn([1, 1, 0]); // Simulate 2 up, 1 down
     Redis::shouldReceive('setex')->once();
 
     Http::fake(['*' => Http::response('', 200)]);
@@ -126,6 +123,8 @@ it('updates site status and calculates uptime', function (): void {
 
     $this->site->refresh();
 
-    // 2/3 = 66.67%
-    $this->assertEquals(66.67, $this->site->uptime);
+    $this->assertEquals(100, $this->site->uptime);
+
+    $checksInDb = DB::table('site_checks')->where('site_id', $this->site->id)->count();
+    $this->assertEquals(1, $checksInDb);
 });

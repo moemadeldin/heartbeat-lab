@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Interfaces\UrlValidator;
 use App\Events\SiteStatusChanged;
+use App\Interfaces\UrlValidator;
 use App\Models\Site;
 use App\Utilities\HttpDefaults;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -43,7 +44,7 @@ final class CheckSiteJob implements ShouldQueue
                 ->get($this->site->url);
 
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
-            $isOnline = $response->successful() && $response->status() === 200;
+            $isOnline = $response->successful();
             $statusCode = $response->status();
 
             Log::info('Site checked', [
@@ -68,7 +69,8 @@ final class CheckSiteJob implements ShouldQueue
             'last_checked_at' => now(),
         ]);
 
-        $uptime = $this->calculateAndUpdateUptime($isOnline);
+        $this->persistCheckResult($isOnline, $statusCode, $responseTime);
+        $uptime = $this->calculateAndUpdateUptime();
 
         Redis::setex(
             sprintf('site:%s:status', $this->site->id),
@@ -85,6 +87,22 @@ final class CheckSiteJob implements ShouldQueue
         $this->dispatchStatusChangedEvent($isOnline, $statusCode, $responseTime, $previousOnline);
     }
 
+    private function persistCheckResult(bool $isOnline, ?int $statusCode, ?float $responseTime): void
+    {
+        DB::table('site_checks')->insert([
+            'site_id' => $this->site->id,
+            'is_online' => $isOnline,
+            'status_code' => $statusCode,
+            'response_time' => $responseTime,
+            'checked_at' => now(),
+        ]);
+
+        DB::table('site_checks')
+            ->where('site_id', $this->site->id)
+            ->where('id', '<', DB::raw("(SELECT id FROM site_checks WHERE site_id = '".$this->site->id."' ORDER BY id DESC LIMIT 1 OFFSET 100)"))
+            ->delete();
+    }
+
     private function dispatchStatusChangedEvent(bool $isOnline, ?int $statusCode, ?float $responseTime, bool $previousOnline = false): void
     {
         if ($this->site->last_checked_at === null) {
@@ -94,33 +112,31 @@ final class CheckSiteJob implements ShouldQueue
         event(new SiteStatusChanged($this->site, $isOnline, $statusCode, $responseTime, $previousOnline));
     }
 
-    private function calculateAndUpdateUptime(bool $isOnline): float
+    private function calculateAndUpdateUptime(): float
     {
-        $key = sprintf('site:%s:checks', $this->site->id);
+        $checks = DB::table('site_checks')
+            ->where('site_id', $this->site->id)
+            ->orderByDesc('id')
+            ->limit(100)
+            ->pluck('is_online');
 
-        Redis::rpush($key, $isOnline ? 1 : 0);
-        Redis::ltrim($key, -100, -1);
+        $total = $checks->count();
 
-        /** @var array<string|int> $checks */
-        $checks = Redis::lrange($key, 0, -1);
-        $total = count($checks);
-
-        $uptime = 0.00;
-
-        if ($total > 0) {
-            $onlineCount = array_sum(array_map(fn (string $value): int => (int) $value, $checks));
-
-            $uptime = round(($onlineCount / $total) * 100, 2);
-
-            $this->site->update(['uptime' => $uptime]);
-
-            Log::info('Uptime calculated', [
-                'site_id' => $this->site->id,
-                'uptime' => $uptime,
-                'total_checks' => $total,
-                'online_checks' => $onlineCount,
-            ]);
+        if ($total === 0) {
+            return $this->site->uptime;
         }
+
+        $onlineCount = $checks->filter()->count();
+        $uptime = round(($onlineCount / $total) * 100, 2);
+
+        $this->site->update(['uptime' => $uptime]);
+
+        Log::info('Uptime calculated', [
+            'site_id' => $this->site->id,
+            'uptime' => $uptime,
+            'total_checks' => $total,
+            'online_checks' => $onlineCount,
+        ]);
 
         return $uptime;
     }

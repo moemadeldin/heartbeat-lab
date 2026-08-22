@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -85,19 +86,26 @@ final class Dashboard extends Component
             return $cached;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, Site> $sites */
-        $sites = $this->sites;
+        $userId = $this->authUser()->id;
 
-        $stats = [
-            'total' => $sites->count(),
-            'online' => $sites->where('is_online', true)->count(),
-            'offline' => $sites->where('is_online', false)->count(),
-            'uptime' => $sites->avg('uptime') ?? 0.00,
+        $stats = DB::table('sites')
+            ->where('user_id', $userId)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN is_online = true THEN 1 ELSE 0 END) as online')
+            ->selectRaw('SUM(CASE WHEN is_online = false THEN 1 ELSE 0 END) as offline')
+            ->selectRaw('COALESCE(AVG(uptime), 0) as uptime')
+            ->first();
+
+        $result = [
+            'total' => (int) $stats->total,
+            'online' => (int) $stats->online,
+            'offline' => (int) $stats->offline,
+            'uptime' => round((float) $stats->uptime, 2),
         ];
 
-        Cache::store('redis')->set($this->statsCacheKey(), $stats, 60);
+        Cache::store('redis')->set($this->statsCacheKey(), $result, 60);
 
-        return $stats;
+        return $result;
     }
 
     private function authUser(): User

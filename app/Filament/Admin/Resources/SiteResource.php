@@ -46,9 +46,11 @@ final class SiteResource extends Resource
                     ->required()
                     ->maxLength(255),
                 TextInput::make('url')
-                    ->url()
+                    ->label('URL')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->rules(['url_or_domain'])
+                    ->placeholder('example.com or https://example.com'),
                 Toggle::make('is_online')
                     ->label('Online')
                     ->disabled(),

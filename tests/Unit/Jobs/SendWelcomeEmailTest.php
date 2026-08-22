@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 use App\Jobs\SendWelcomeEmailJob;
+use App\Mail\WelcomeEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 it('can be dispatched to queue', function (): void {
@@ -21,13 +22,13 @@ it('implements should queue interface', function (): void {
     expect($job)->toBeInstanceOf(ShouldQueue::class);
 });
 
-it('logs welcome email processing', function (): void {
-    Log::shouldReceive('info')
-        ->once()
-        ->with('Redis Queue: Processing welcome email for test@example.com');
+it('sends welcome email', function (): void {
+    Mail::fake();
 
-    $job = new SendWelcomeEmailJob('test@example.com');
+    $job = new SendWelcomeEmailJob('test@example.com', 'Test');
     $job->handle();
+
+    Mail::assertSent(WelcomeEmail::class, fn (WelcomeEmail $mail): bool => $mail->hasTo('test@example.com'));
 });
 
 it('stores email in public property', function (): void {

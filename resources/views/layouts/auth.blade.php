@@ -22,7 +22,7 @@
                 setTimeout(() => this.show = false, 5000);
             });
         }
-    }" x-show="show" x-transition class="fixed bottom-5 right-5 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
+    }" x-show="show" x-transition class="fixed top-5 right-5 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
         <span x-text="message"></span>
     </div>
 

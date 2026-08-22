@@ -16,7 +16,7 @@
         @site-created.window="showCreateModal = false" @close-create-modal.window="showCreateModal = false"
         @close-modal.window="showEditModal = false; showDeleteModal = false"
         @site-updated.window="showEditModal = false" @site-deleted.window="showDeleteModal = false"
-        @site-status-changed.window="if ($event.detail.previous_online !== $event.detail.is_online) { $dispatch('site-status-updated') }">
+        @site-status-changed.window="$dispatch('site-status-updated')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-gray-700">
                 <div class="flex items-center justify-between">

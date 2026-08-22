@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -43,6 +44,14 @@ final class Site extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return HasMany<SiteCheck, $this>
+     */
+    public function checks(): HasMany
+    {
+        return $this->hasMany(SiteCheck::class);
     }
 
     /**
@@ -87,6 +96,28 @@ final class Site extends Model
             ->distinct()
             ->with('user')
             ->orderBy('created_at');
+    }
+
+    /**
+     * @return Attribute<string, never>
+     */
+    protected function url(): Attribute
+    {
+        return Attribute::make(
+            set: function (string $value): string {
+                $value = mb_trim($value);
+
+                if ($value === '') {
+                    return $value;
+                }
+
+                if (! str_starts_with($value, 'http://') && ! str_starts_with($value, 'https://')) {
+                    return 'https://'.$value;
+                }
+
+                return $value;
+            },
+        );
     }
 
     /**

@@ -20,7 +20,7 @@ final readonly class SslCertificateService
             return ['ssl_valid' => null, 'ssl_issuer' => null, 'ssl_days_left' => null];
         }
 
-        $certInfo = $this->fetchCertInfo($parsed['host']);
+        $certInfo = $this->fetchCertInfo($parsed['host'], $parsed['port']);
 
         if ($certInfo === null) {
             return ['ssl_valid' => false, 'ssl_issuer' => null, 'ssl_days_left' => null];
@@ -45,7 +45,7 @@ final readonly class SslCertificateService
             ];
         }
 
-        $certInfo = $this->fetchCertInfo($parsed['host']);
+        $certInfo = $this->fetchCertInfo($parsed['host'], $parsed['port']);
 
         if ($certInfo === null) {
             return [
@@ -66,7 +66,7 @@ final readonly class SslCertificateService
     }
 
     /**
-     * @return array{host: string}|null
+     * @return array{host: string, port: int}|null
      */
     private function parseUrl(string $url): ?array
     {
@@ -82,13 +82,15 @@ final readonly class SslCertificateService
             return null;
         }
 
-        return ['host' => $host];
+        $port = (int) ($parsed['port'] ?? 443);
+
+        return ['host' => $host, 'port' => $port];
     }
 
     /**
      * @return array{validTo_time_t: int, issuer: array{O?: string, CN?: string}}|null
      */
-    private function fetchCertInfo(string $host): ?array
+    private function fetchCertInfo(string $host, int $port = 443): ?array
     {
         try {
             $context = stream_context_create([
@@ -100,7 +102,7 @@ final readonly class SslCertificateService
             ]);
 
             $socket = stream_socket_client(
-                sprintf('ssl://%s:443', $host),
+                sprintf('ssl://%s:%d', $host, $port),
                 $errno,
                 $errstr,
                 10,
