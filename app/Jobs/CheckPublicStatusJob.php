@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Interfaces\UrlValidator;
 use App\Services\SslCertificateService;
 use App\Utilities\HttpDefaults;
 use Exception;
@@ -23,8 +24,10 @@ final class CheckPublicStatusJob implements ShouldQueue
         private readonly string $token,
     ) {}
 
-    public function handle(SslCertificateService $ssl): void
+    public function handle(SslCertificateService $ssl, UrlValidator $validator): void
     {
+        $validator->validateForPublicCheck($this->url);
+
         $startTime = microtime(true);
 
         try {

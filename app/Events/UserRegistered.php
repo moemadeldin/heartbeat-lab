@@ -41,7 +41,6 @@ final class UserRegistered implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'name' => $this->user->name,
             'message' => 'A new lab member has arrived!',
         ];
     }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Interfaces\UrlValidator;
 use App\Jobs\CheckSiteJob;
 use App\Models\Site;
 use App\Models\User;
@@ -15,6 +16,11 @@ beforeEach(function (): void {
     $this->site = Site::factory()->for($this->user)->create([
         'url' => 'https://example.com',
     ]);
+
+    $mock = Mockery::mock(UrlValidator::class);
+    $mock->shouldReceive('validateForMonitoring')->andReturnNull();
+
+    $this->app->instance(UrlValidator::class, $mock);
 });
 
 it('updates site status when online', function (): void {
@@ -23,7 +29,7 @@ it('updates site status when online', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
@@ -37,7 +43,7 @@ it('updates site status when offline', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
@@ -53,7 +59,7 @@ it('handles connection error', function (): void {
     });
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
@@ -72,7 +78,7 @@ it('logs successful check', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     Log::shouldHaveReceived('info')->with('Site checked', Mockery::any());
     Log::shouldHaveReceived('info')->with('Uptime calculated', Mockery::any());
@@ -84,7 +90,7 @@ it('marks site offline when response successful but not 200', function (): void 
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
@@ -98,7 +104,7 @@ it('marks site offline when response redirect', function (): void {
     ]);
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 
@@ -116,7 +122,7 @@ it('updates site status and calculates uptime', function (): void {
     Log::spy();
 
     $job = new CheckSiteJob($this->site);
-    $job->handle();
+    $job->handle(resolve(UrlValidator::class));
 
     $this->site->refresh();
 

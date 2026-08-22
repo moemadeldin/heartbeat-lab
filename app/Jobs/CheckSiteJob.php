@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Interfaces\UrlValidator;
 use App\Events\SiteStatusChanged;
 use App\Models\Site;
 use App\Utilities\HttpDefaults;
@@ -20,8 +21,10 @@ final class CheckSiteJob implements ShouldQueue
 
     public function __construct(private Site $site) {}
 
-    public function handle(): void
+    public function handle(UrlValidator $validator): void
     {
+        $validator->validateForMonitoring($this->site->url);
+
         $previousOnline = $this->site->is_online ?? false;
         $isOnline = false;
         $statusCode = null;

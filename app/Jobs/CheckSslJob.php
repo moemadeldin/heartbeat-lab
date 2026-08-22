@@ -98,7 +98,7 @@ final class CheckSslJob implements ShouldQueue
     private function handleError(Exception $exception, string $url): void
     {
         $this->site->update([
-            'ssl_valid' => false,
+            'ssl_valid' => null,
             'ssl_expires_at' => null,
             'ssl_issuer' => null,
         ]);

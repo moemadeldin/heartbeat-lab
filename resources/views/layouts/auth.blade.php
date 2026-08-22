@@ -14,16 +14,16 @@
 <body class="bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 antialiased font-sans">
     <div x-data="{ 
         show: false, 
-        name: '',
+        message: '',
         init() {
             window.addEventListener('user-registered', (event) => {
-                this.name = event.detail.name;
+                this.message = event.detail.message;
                 this.show = true;
                 setTimeout(() => this.show = false, 5000);
             });
         }
     }" x-show="show" x-transition class="fixed bottom-5 right-5 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
-        Welcome, <span x-text="name"></span>!
+        <span x-text="message"></span>
     </div>
 
     <x-navbar>
